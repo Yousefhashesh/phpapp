@@ -115,8 +115,7 @@ class SyncPermissionsSeeder extends Seeder
             }
         }
         
-        // 4. Delete other roles
-        Role::query()->whereNotIn('name', array_keys($roles))->delete();
+        // Keep custom/specialized roles created by other seeders.
 
         // 3. Assign Permissions to Roles (Basic Initial Setup)
         $superAdminRole = Role::findByName('super-admin');

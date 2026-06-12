@@ -28,6 +28,14 @@ class ShipperController extends Controller
             });
         }
 
+        if ($request->filled('governorate_id')) {
+            $governorateId = (int) $request->get('governorate_id');
+            $query->where(function ($q) use ($governorateId) {
+                $q->whereHas('governorates', fn ($sq) => $sq->where('governorates.id', $governorateId))
+                    ->orWhereHas('user', fn ($sq) => $sq->whereHas('defaultGovernorates', fn ($gq) => $gq->where('governorates.id', $governorateId)));
+            });
+        }
+
         if ($request->filled('eligible_for')) {
             $type = $request->get('eligible_for');
             if ($type === 'collection') {
@@ -55,7 +63,7 @@ class ShipperController extends Controller
             }
         }
 
-        $perPage = $request->get('per_page', 15);
+        $perPage = $request->get('per_page', $request->get('itemsPerPage', 15));
         $shippers = $perPage == -1 
             ? $query->orderByDesc('id')->get()
             : $query->orderByDesc('id')->paginate($perPage);

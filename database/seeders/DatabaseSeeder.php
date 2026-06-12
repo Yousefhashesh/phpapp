@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
+            SyncPermissionsSeeder::class,
             ExpenseAuthorizationSeeder::class,
             SettingSeeder::class,
         ]);
@@ -35,8 +36,10 @@ class DatabaseSeeder extends Seeder
             $admin->assignRole('super-admin');
         }
 
-        $this->call([
-            FakeDataSeeder::class,
-        ]);
+        if ($this->command?->getLaravel()->environment(['local', 'testing'])) {
+            $this->call([
+                FakeDataSeeder::class,
+            ]);
+        }
     }
 }

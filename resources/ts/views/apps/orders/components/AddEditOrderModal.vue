@@ -116,15 +116,21 @@ const filteredCities = computed(() => {
 
 const filteredShippers = computed(() => {
   if (!orderData.value.governorate_id)
-    return shippers.value
-
-  const gov = governorates.value.find((g: any) => g.id === orderData.value.governorate_id)
-  const defaultShipperId = gov?.default_shipper_user_id || gov?.defaultShipper?.id
-
-  if (!defaultShipperId)
     return []
 
-  return shippers.value.filter((shipper: any) => Number(shipper.id) === Number(defaultShipperId))
+  const gov = governorates.value.find((g: any) => g.id === orderData.value.governorate_id)
+  const assignedShipperIds = (gov?.shipper_user_ids || gov?.shippers?.map((shipper: any) => shipper.id) || [])
+    .map((id: any) => Number(id))
+
+  const defaultShipperId = gov?.default_shipper_user_id || gov?.defaultShipper?.id
+  if (defaultShipperId && !assignedShipperIds.includes(Number(defaultShipperId))) {
+    assignedShipperIds.push(Number(defaultShipperId))
+  }
+
+  if (!assignedShipperIds.length)
+    return []
+
+  return shippers.value.filter((shipper: any) => assignedShipperIds.includes(Number(shipper.id)))
 })
 
 // 👉 Auto-fill logic based on Client/Gov/Shipper selection
@@ -357,4 +363,3 @@ const closeDialog = () => {
     </VCard>
   </VDialog>
 </template>
-```

@@ -35,6 +35,10 @@ class ClientController extends Controller
         $query = Client::query()
             ->with(['user:id,name,username,phone', 'plan', 'shippingContent']);
 
+        if ($request->user()?->hasRole('client')) {
+            $query->where('user_id', $request->user()->id);
+        }
+
         if ($request->filled('q')) {
             $search = (string) $request->get('q');
             $query->whereHas('user', function ($q) use ($search) {
@@ -101,7 +105,7 @@ class ClientController extends Controller
             }
         }
 
-        $perPage = $request->get('per_page', 5);
+        $perPage = $request->get('per_page', $request->get('itemsPerPage', 5));
         $clients = $perPage == -1 
             ? $query->orderByDesc('id')->get()
             : $query->orderByDesc('id')->paginate($perPage);
@@ -120,6 +124,10 @@ class ClientController extends Controller
     {
         $this->authorizePermission($request, 'client.page');
         $this->authorizePermission($request, 'client.view');
+
+        if ($request->user()?->hasRole('client') && (int) $client->user_id !== (int) $request->user()->id) {
+            abort(403, 'You can only view your own client account.');
+        }
 
         $client->load(['user:id,name,username,phone', 'plan', 'shippingContent']);
 

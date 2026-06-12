@@ -8,6 +8,7 @@ const headers = [
   { title: 'Area', key: 'name' },
   { title: 'Follow-up Hours', key: 'follow_up_hours' },
   { title: 'Default Shipper', key: 'defaultShipper' },
+  { title: 'Shippers', key: 'shippers' },
   { title: 'Cities', key: 'cities' },
   { title: 'Actions', key: 'actions', sortable: false },
 ]
@@ -22,6 +23,7 @@ const columnPermissions: Record<string, string> = {
   name: 'area.column.name.view',
   follow_up_hours: 'area.column.follow_up_hours.view',
   defaultShipper: 'area.column.default_shipper.view',
+  shippers: 'area.column.default_shipper.view',
   cities: 'area.column.cities.view',
 }
 
@@ -137,6 +139,19 @@ const handleFormSubmit = () => {
         <!-- Default Shipper -->
         <template #item.defaultShipper="{ item }: { item: any }">
           {{ item.defaultShipper?.name || '-' }}
+        </template>
+
+        <template #item.shippers="{ item }: { item: any }">
+          <div class="d-flex flex-wrap gap-1 py-2" style="max-width: 260px;">
+            <VChip
+              v-for="shipper in item.shippers"
+              :key="shipper.id"
+              size="small"
+              variant="tonal"
+            >
+              {{ shipper.name }}
+            </VChip>
+          </div>
         </template>
 
         <!-- Cities -->

@@ -25,6 +25,7 @@ const id = ref<number | null>(null)
 const name = ref('')
 const followUpHours = ref(24)
 const defaultShipperId = ref<number | null>(null)
+const shipperIds = ref<number[]>([])
 const cities = ref<string[]>([])
 const newCityName = ref('')
 
@@ -49,6 +50,7 @@ watch(() => props.isDrawerOpen, (isOpen) => {
       // Ensure it's a number
       const shipperId = props.governorate.default_shipper_user_id
       defaultShipperId.value = shipperId ? Number(shipperId) : null
+      shipperIds.value = (props.governorate.shipper_user_ids || props.governorate.shippers?.map((s: any) => s.id) || []).map(Number)
       
       cities.value = props.governorate.cities?.map((c: any) => c.name) || []
     } else {
@@ -56,13 +58,16 @@ watch(() => props.isDrawerOpen, (isOpen) => {
       name.value = ''
       followUpHours.value = 24
       defaultShipperId.value = null
+      shipperIds.value = []
       cities.value = []
     }
   }
 })
 
 watch(defaultShipperId, (newVal) => {
-  // 
+  if (newVal && !shipperIds.value.includes(Number(newVal))) {
+    shipperIds.value.push(Number(newVal))
+  }
 })
 
 const addCity = () => {
@@ -91,6 +96,7 @@ const onSubmit = async () => {
     name: name.value,
     follow_up_hours: followUpHours.value,
     default_shipper_user_id: defaultShipperId.value,
+    shipper_user_ids: shipperIds.value,
     cities: cities.value,
   }
   
@@ -169,6 +175,20 @@ const handleDrawerModelValueUpdate = (val: boolean) => {
                   item-value="value"
                   :return-object="false"
                   clearable
+                />
+              </VCol>
+
+              <VCol cols="12">
+                <AppSelect
+                  v-model="shipperIds"
+                  label="Governorate Shippers"
+                  :items="shippers"
+                  item-title="title"
+                  item-value="value"
+                  :return-object="false"
+                  multiple
+                  chips
+                  closable-chips
                 />
               </VCol>
 

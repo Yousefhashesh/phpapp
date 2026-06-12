@@ -22,6 +22,12 @@ class Governorate extends Model
         return $this->belongsTo(User::class, 'default_shipper_user_id');
     }
 
+    public function shippers()
+    {
+        return $this->belongsToMany(User::class, 'governorate_shipper', 'governorate_id', 'shipper_user_id')
+            ->withTimestamps();
+    }
+
     public function planPrices()
     {
         return $this->hasMany(PlanPrice::class);

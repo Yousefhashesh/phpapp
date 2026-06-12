@@ -13,6 +13,7 @@ use App\Models\PlanPrice;
 use App\Models\RefusedReason;
 use App\Models\Shipper;
 use App\Support\Permissions\OrdersPermissionMap;
+use App\Support\Services\FinancialFormulaService;
 use App\Traits\ChecksWorkingHours;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
@@ -58,6 +59,13 @@ class OrderController extends Controller
     {
         $this->authorizePermission($request, 'order.create');
         $this->checkWorkingHours('orders');
+
+        if ($request->user()?->hasRole('client')) {
+            $request->merge([
+                'client_user_id' => $request->user()->id,
+                'status' => 'OUT_FOR_DELIVERY',
+            ]);
+        }
 
         $data = $request->validate([
             'code' => ['nullable', 'string', 'unique:orders,code'],
@@ -105,6 +113,7 @@ class OrderController extends Controller
     {
         $this->authorizePermission($request, 'order.page');
         $this->authorizePermission($request, 'order.view');
+        $this->authorizeOrderVisible($request, $order);
 
         $validated = $request->validate([
             'include_history' => ['nullable', 'boolean'],
@@ -148,6 +157,7 @@ class OrderController extends Controller
     public function update(Request $request, Order $order): JsonResponse
     {
         $this->authorizePermission($request, 'order.update');
+        $this->authorizeOrderVisible($request, $order);
         $this->authorizeNotShipperCollected($order);
         $this->authorizeFinalStatusUpdate($request, $order);
 
@@ -199,6 +209,7 @@ class OrderController extends Controller
     public function destroy(Request $request, Order $order): JsonResponse
     {
         $this->authorizePermission($request, 'order.delete');
+        $this->authorizeOrderVisible($request, $order);
         $this->authorizeNotShipperCollected($order);
 
         $order->delete();
@@ -211,7 +222,7 @@ class OrderController extends Controller
     public function restore(Request $request, $id): JsonResponse
     {
         $this->authorizePermission($request, 'order.delete');
-        $order = Order::onlyTrashed()->findOrFail($id);
+        $order = Order::onlyTrashed()->forUserRole()->findOrFail($id);
         $order->restore();
 
         return response()->json([
@@ -222,7 +233,7 @@ class OrderController extends Controller
     public function forceDelete(Request $request, $id): JsonResponse
     {
         $this->authorizePermission($request, 'order.delete');
-        $order = Order::onlyTrashed()->findOrFail($id);
+        $order = Order::onlyTrashed()->forUserRole()->findOrFail($id);
         $order->forceDelete();
 
         return response()->json([
@@ -237,6 +248,7 @@ class OrderController extends Controller
     public function changeStatus(Request $request, Order $order): JsonResponse
     {
         $this->authorizePermission($request, 'order.change-status');
+        $this->authorizeOrderVisible($request, $order);
         $this->authorizeNotShipperCollected($order);
         $this->authorizeFinalStatusUpdate($request, $order);
 
@@ -321,6 +333,7 @@ class OrderController extends Controller
     public function changeShipper(Request $request, Order $order): JsonResponse
     {
         $this->authorizePermission($request, 'order.change-shipper');
+        $this->authorizeOrderVisible($request, $order);
         $this->authorizeNotShipperCollected($order);
         $this->authorizeShipperChangeAllowed($order);
         $this->authorizeFinalStatusUpdate($request, $order);
@@ -336,6 +349,7 @@ class OrderController extends Controller
         ];
 
         $payload = $this->resolveDefaultShipper($payload, $order);
+        $this->authorizeClientShipperMatchesGovernorate($request, $payload, $order);
         
         if (array_key_exists('shipper_date', $data) && $data['shipper_date']) {
             $payload['shipper_date'] = $data['shipper_date'];
@@ -361,6 +375,7 @@ class OrderController extends Controller
     public function changeNote(Request $request, Order $order): JsonResponse
     {
         $this->authorizePermission($request, 'order.change-note');
+        $this->authorizeOrderVisible($request, $order);
         $this->authorizeNotShipperCollected($order);
         $this->authorizeFinalStatusUpdate($request, $order);
 
@@ -379,6 +394,7 @@ class OrderController extends Controller
     public function approve(Request $request, Order $order): JsonResponse
     {
         $this->authorizePermission($request, 'order.approve');
+        $this->authorizeOrderVisible($request, $order);
 
         $order = $this->markOrderApproved($request, $order);
 
@@ -391,6 +407,7 @@ class OrderController extends Controller
     public function reject(Request $request, Order $order): JsonResponse
     {
         $this->authorizePermission($request, 'order.reject');
+        $this->authorizeOrderVisible($request, $order);
 
         $data = $request->validate([
             'approval_note' => ['nullable', 'string'],
@@ -412,6 +429,7 @@ class OrderController extends Controller
     public function changeExternalCode(Request $request, Order $order): JsonResponse
     {
         $this->authorizePermission($request, 'order.change-external-code');
+        $this->authorizeOrderVisible($request, $order);
         $this->authorizeNotShipperCollected($order);
 
         if (in_array($order->status, self::FINAL_STATUSES, true)) {
@@ -450,7 +468,7 @@ class OrderController extends Controller
             'shipper_date' => ['nullable', 'date'],
         ]);
 
-        $orders = Order::query()->whereIn('id', $data['order_ids'])->get();
+        $orders = Order::query()->forUserRole()->whereIn('id', $data['order_ids'])->get();
 
         $updated = DB::transaction(function () use ($orders, $data): array {
             $result = [];
@@ -469,6 +487,7 @@ class OrderController extends Controller
                 ];
 
                 $payload = $this->resolveDefaultShipper($payload, $order);
+                $this->authorizeClientShipperMatchesGovernorate(request(), $payload, $order);
                 
                 if (array_key_exists('shipper_date', $data) && $data['shipper_date']) {
                     $payload['shipper_date'] = $data['shipper_date'];
@@ -523,7 +542,7 @@ class OrderController extends Controller
             ]);
         }
 
-        $orders = Order::query()->whereIn('id', $data['order_ids'])->get();
+        $orders = Order::query()->forUserRole()->whereIn('id', $data['order_ids'])->get();
 
         $updated = DB::transaction(function () use ($orders, $data, $refusedReasons, $allowsEditAmount, $isClear, $reasonIds): array {
             $result = [];
@@ -599,7 +618,7 @@ class OrderController extends Controller
             'order_ids.*' => ['required', 'integer', 'exists:orders,id'],
         ]);
 
-        $orders = Order::query()->whereIn('id', $data['order_ids'])->get();
+        $orders = Order::query()->forUserRole()->whereIn('id', $data['order_ids'])->get();
 
         $deletedCount = DB::transaction(function () use ($orders): int {
             $count = 0;
@@ -630,7 +649,7 @@ class OrderController extends Controller
             'order_ids.*' => ['required', 'integer'],
         ]);
 
-        $orders = Order::onlyTrashed()->whereIn('id', $data['order_ids'])->get();
+        $orders = Order::onlyTrashed()->forUserRole()->whereIn('id', $data['order_ids'])->get();
 
         $restoredCount = DB::transaction(function () use ($orders): int {
             $count = 0;
@@ -656,7 +675,7 @@ class OrderController extends Controller
             'order_ids.*' => ['required', 'integer'],
         ]);
 
-        $orders = Order::onlyTrashed()->whereIn('id', $data['order_ids'])->get();
+        $orders = Order::onlyTrashed()->forUserRole()->whereIn('id', $data['order_ids'])->get();
 
         $deletedCount = DB::transaction(function () use ($orders): int {
             $count = 0;
@@ -784,6 +803,7 @@ class OrderController extends Controller
     {
         $this->authorizePermission($request, 'order.page');
         $this->authorizePermission($request, 'order.view');
+        $this->authorizeOrderVisible($request, $order);
 
         $validated = $request->validate([
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
@@ -822,6 +842,7 @@ class OrderController extends Controller
     {
         $this->authorizePermission($request, 'order.page');
         $this->authorizePermission($request, 'order.view');
+        $this->authorizeOrderVisible($request, $order);
 
         $order->load([
             'client:id,name,phone',
@@ -931,8 +952,25 @@ class OrderController extends Controller
         $this->authorizePermission($request, 'order.page');
         $this->authorizePermission($request, 'order.view');
 
+        $clientQuery = Client::query()->with('user:id,name')->orderByDesc('id');
+        if ($request->user()?->hasRole('client')) {
+            $clientQuery->where('user_id', $request->user()->id);
+        }
+
         $metadata = [
-            'governorates' => Governorate::query()->select('id', 'name', 'default_shipper_user_id')->with('cities:id,governorate_id,name')->get(),
+            'governorates' => Governorate::query()
+                ->select('id', 'name', 'default_shipper_user_id')
+                ->with(['cities:id,governorate_id,name', 'shippers:id,name'])
+                ->get()
+                ->map(function (Governorate $governorate): array {
+                    return [
+                        'id' => $governorate->id,
+                        'name' => $governorate->name,
+                        'default_shipper_user_id' => $governorate->default_shipper_user_id,
+                        'shipper_user_ids' => $governorate->shippers->pluck('id')->values()->all(),
+                        'cities' => $governorate->cities,
+                    ];
+                }),
             'shippers' => Shipper::query()->with('user:id,name')->orderByDesc('id')->get()->map(function ($s) {
                 return [
                     'id' => $s->user_id,
@@ -940,7 +978,7 @@ class OrderController extends Controller
                     'commission_rate' => $s->commission_rate,
                 ];
             }),
-            'clients' => Client::query()->with('user:id,name')->orderByDesc('id')->get()->map(function ($c) {
+            'clients' => $clientQuery->get()->map(function ($c) {
                 return [
                     'id' => $c->user_id,
                     'name' => $c->user?->name ?? 'Unknown',
@@ -997,6 +1035,10 @@ class OrderController extends Controller
             'is_shipper_returned' => ['nullable'],
             'is_client_returned' => ['nullable'],
             'has_return' => ['nullable'],
+            'is_in_shipper_collection' => ['nullable'],
+            'is_in_client_settlement' => ['nullable'],
+            'is_in_shipper_return' => ['nullable'],
+            'is_in_client_return' => ['nullable'],
             'order_note' => ['nullable', 'string', 'max:255'],
             'latest_status_note' => ['nullable', 'string', 'max:255'],
             'shipper_date' => ['nullable', 'string', 'max:255'],
@@ -1025,6 +1067,11 @@ class OrderController extends Controller
             'search.is_client_settled' => ['nullable', 'boolean'],
             'search.is_shipper_returned' => ['nullable', 'boolean'],
             'search.is_client_returned' => ['nullable', 'boolean'],
+            'search.has_return' => ['nullable', 'boolean'],
+            'search.is_in_shipper_collection' => ['nullable', 'boolean'],
+            'search.is_in_client_settlement' => ['nullable', 'boolean'],
+            'search.is_in_shipper_return' => ['nullable', 'boolean'],
+            'search.is_in_client_return' => ['nullable', 'boolean'],
             'trashed' => ['nullable', 'string', Rule::in(['with', 'only'])],
         ]);
 
@@ -1092,6 +1139,23 @@ class OrderController extends Controller
     private function authorizePermission(Request $request, string $permission): void
     {
         abort_unless($request->user()?->can($permission), 403, "Missing permission: {$permission}");
+    }
+
+    private function authorizeOrderVisible(Request $request, Order $order): void
+    {
+        $user = $request->user();
+
+        if (! $user || $user->hasAnyRole(['admin', 'super-admin'])) {
+            return;
+        }
+
+        if ($user->hasRole('client') && (int) $order->client_user_id !== (int) $user->id) {
+            abort(403, 'You can only access your own orders.');
+        }
+
+        if ($user->hasRole('shipper') && (int) $order->shipper_user_id !== (int) $user->id) {
+            abort(403, 'You can only access assigned orders.');
+        }
     }
 
     private function authorizeFinalStatusUpdate(Request $request, Order $order): void
@@ -1270,6 +1334,8 @@ class OrderController extends Controller
                     ->orWhere('order_note', 'like', $anyLike)
                     ->orWhere('latest_status_note', 'like', $anyLike)
                     ->orWhere('status', 'like', $anyLike)
+                    ->orWhereHas('governorate', fn (Builder $q) => $q->where('name', 'like', $anyLike))
+                    ->orWhereHas('city', fn (Builder $q) => $q->where('name', 'like', $anyLike))
                     ->orWhereHas('shipper', fn (Builder $q) => $q->where('name', 'like', $anyLike))
                     ->orWhereHas('client', fn (Builder $q) => $q->where('name', 'like', $anyLike));
             });
@@ -1567,8 +1633,18 @@ class OrderController extends Controller
         $data['total_amount'] = $total;
         $data['shipping_fee'] = round((float) $shippingFee, 2);
         $data['commission_amount'] = round((float) $commissionAmount, 2);
-        $data['company_amount'] = round($data['shipping_fee'] - $data['commission_amount'], 2);
-        $data['cod_amount'] = round($total - $data['shipping_fee'], 2);
+        $formulaService = app(FinancialFormulaService::class);
+        $variables = [
+            'total_amount' => $total,
+            'shipping_fee' => $data['shipping_fee'],
+            'commission_amount' => $data['commission_amount'],
+            'company_amount' => $data['company_amount'] ?? 0,
+            'cod_amount' => $data['cod_amount'] ?? 0,
+        ];
+
+        $data['company_amount'] = $formulaService->calculate('formula_company_amount', $variables);
+        $variables['company_amount'] = $data['company_amount'];
+        $data['cod_amount'] = $formulaService->calculate('formula_cod_amount', $variables);
 
         return $data;
     }
@@ -1650,10 +1726,6 @@ class OrderController extends Controller
 
     private function authorizeClientShipperMatchesGovernorate(Request $request, array $data, ?Order $order = null): void
     {
-        if (! $request->user()?->hasRole('client')) {
-            return;
-        }
-
         $shipperUserId = $data['shipper_user_id'] ?? $order?->shipper_user_id;
         if ($shipperUserId === null || $shipperUserId === '') {
             return;
@@ -1668,7 +1740,12 @@ class OrderController extends Controller
             ->whereKey($governorateId)
             ->value('default_shipper_user_id');
 
-        if ((int) $defaultShipperUserId !== (int) $shipperUserId) {
+        $isAssignedShipper = Governorate::query()
+            ->whereKey($governorateId)
+            ->whereHas('shippers', fn (Builder $query) => $query->where('users.id', $shipperUserId))
+            ->exists();
+
+        if ((int) $defaultShipperUserId !== (int) $shipperUserId && ! $isAssignedShipper) {
             throw ValidationException::withMessages([
                 'shipper_user_id' => ['Selected shipper is not assigned to the selected governorate.'],
             ]);

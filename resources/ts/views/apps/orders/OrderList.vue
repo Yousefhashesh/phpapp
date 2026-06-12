@@ -239,7 +239,7 @@ const totals = ref({
 
 const searchShippers = async (val: string = '') => {
   try {
-    const { data: res } = await useApi<any>(createUrl('/shippers', { query: { q: val, per_page: 20 } })).get().json()
+    const { data: res } = await useApi<any>(createUrl('/shippers', { query: { q: val, governorate_id: selectedGovernorate.value, per_page: 20 } })).get().json()
     const data = (res.value?.data || res.value || [])
     shippers.value = data.map((s: any) => ({
       id: s.user_id,
@@ -249,6 +249,11 @@ const searchShippers = async (val: string = '') => {
     }))
   } catch (e) { console.error(e) }
 }
+
+watch(selectedGovernorate, () => {
+  selectedShipper.value = null
+  searchShippers()
+})
 
 const openBulkStatusModal = () => { isBulkStatusModalVisible.value = true }
 const openBulkShipperModal = () => { isBulkShipperModalVisible.value = true }

@@ -47,6 +47,13 @@ class Setting extends Model
                 'order_follow_up_hours' => '48',
             ],
 
+            'financial_formulas' => [
+                'formula_company_amount' => 'shipping_fee - commission_amount',
+                'formula_cod_amount' => 'total_amount - shipping_fee',
+                'formula_client_settlement_net_amount' => 'cod_amount - settlement_fees',
+                'formula_shipper_collection_net_amount' => 'total_amount - commission_amount',
+            ],
+
             'plans' => [
                 'welcome_plans' => 'all',
             ],

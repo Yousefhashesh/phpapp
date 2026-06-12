@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
+use App\Support\Services\FinancialFormulaService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -68,6 +69,17 @@ class SettingController extends Controller
         }
 
         foreach ($settings as $key => $value) {
+            $group = Setting::getGroupForKey($key);
+
+            if ($group === null) {
+                continue;
+            }
+
+            if ($group === 'financial_formulas') {
+                $this->authorizePermission($request, 'setting.financial-formulas.update');
+                $this->validateFormula($key, (string) $value);
+            }
+
             Setting::query()
                 ->where('key', $key)
                 ->update(['value' => $value]);
@@ -92,5 +104,17 @@ class SettingController extends Controller
     private function authorizePermission(Request $request, string $permission): void
     {
         abort_unless($request->user()?->can($permission), 403, "Missing permission: {$permission}");
+    }
+
+    private function validateFormula(string $key, string $formula): void
+    {
+        app(FinancialFormulaService::class)->calculateFormula($formula, [
+            'total_amount' => 100,
+            'shipping_fee' => 20,
+            'commission_amount' => 5,
+            'company_amount' => 15,
+            'cod_amount' => 80,
+            'settlement_fees' => 0,
+        ]);
     }
 }

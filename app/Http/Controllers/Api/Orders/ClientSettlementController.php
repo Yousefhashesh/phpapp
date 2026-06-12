@@ -10,6 +10,7 @@ use App\Models\ClientSettlementOrder;
 use App\Models\Order;
 use App\Models\Setting;
 use App\Support\Permissions\CollectionsReturnsSettlementsPermissionMap;
+use App\Support\Services\FinancialFormulaService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -315,7 +316,14 @@ class ClientSettlementController extends Controller
             $codAmountTotal = $orders->sum('cod_amount');
 
             $actualTotalFees = $orderShippingFees + $settlementFees;
-            $netAmount = round($codAmountTotal - $settlementFees, 2);
+            $netAmount = $this->resolveSettlementAmount(
+                $totalAmount,
+                $orderShippingFees,
+                0,
+                0,
+                $codAmountTotal,
+                $settlementFees,
+            );
 
             $settlementData = [
                 'client_user_id' => $data['client_user_id'],
@@ -632,7 +640,14 @@ class ClientSettlementController extends Controller
                 'order_id' => $order->id,
                 'order_amount' => $order->total_amount,
                 'fee' => $order->shipping_fee,
-                'net_amount' => $order->cod_amount,
+                'net_amount' => $this->resolveSettlementAmount(
+                    (float) $order->total_amount,
+                    (float) $order->shipping_fee,
+                    (float) $order->commission_amount,
+                    (float) $order->company_amount,
+                    (float) $order->cod_amount,
+                    0,
+                ),
                 'added_at' => now(),
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -669,6 +684,26 @@ class ClientSettlementController extends Controller
                 'is_client_settled' => $settlement->status === 'COMPLETED',
                 'client_settled_at' => $settlement->status === 'COMPLETED' ? $settlement->settlement_date : null,
             ]);
+    }
+
+    private function resolveSettlementAmount(
+        float $totalAmount,
+        float $shippingFee,
+        float $commissionAmount,
+        float $companyAmount,
+        float $codAmount,
+        float $settlementFees,
+    ): float {
+        $amount = app(FinancialFormulaService::class)->calculate('formula_client_settlement_net_amount', [
+            'total_amount' => $totalAmount,
+            'shipping_fee' => $shippingFee,
+            'commission_amount' => $commissionAmount,
+            'company_amount' => $companyAmount,
+            'cod_amount' => $codAmount,
+            'settlement_fees' => $settlementFees,
+        ]);
+
+        return round(max($amount, 0), 2);
     }
 
     private function requiresShipperCollectionFirst(?int $clientUserId = null): bool

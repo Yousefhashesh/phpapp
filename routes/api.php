@@ -67,6 +67,7 @@ Route::group(['middleware' => ['auth:sanctum', UpdateLoginSessionLastSeen::class
     Route::get('whatsapp/status', [WhatsAppController::class, 'status']);
     Route::get('whatsapp/qr', [WhatsAppController::class, 'qr']);
     Route::get('whatsapp/groups', [WhatsAppController::class, 'groups']);
+    Route::post('whatsapp/restart', [WhatsAppController::class, 'restart']);
     Route::apiResource('governorates', GovernorateController::class);
     Route::apiResource('plans', PlanController::class);
     Route::apiResource('materials', MaterialController::class);

@@ -18,7 +18,7 @@ class GovernorateController extends Controller
         $this->authorizePermission($request, 'area.view');
 
         $governorates = Governorate::query()
-            ->with(['cities:id,governorate_id,name', 'defaultShipper:id,name'])
+            ->with(['cities:id,governorate_id,name', 'defaultShipper:id,name', 'shippers:id,name'])
             ->orderBy('name')
             ->get();
 
@@ -35,6 +35,8 @@ class GovernorateController extends Controller
             'name'                    => ['required', 'string', 'max:255', 'unique:governorates,name'],
             'follow_up_hours'         => ['required', 'integer', 'min:0'],
             'default_shipper_user_id' => ['nullable', 'integer', 'exists:users,id'],
+            'shipper_user_ids'        => ['nullable', 'array'],
+            'shipper_user_ids.*'      => ['integer', 'exists:users,id', 'distinct'],
             'cities'                  => ['nullable', 'array'],
             'cities.*'                => ['required', 'string', 'max:255', 'distinct'],
         ]);
@@ -59,7 +61,9 @@ class GovernorateController extends Controller
             City::query()->insert($cityRows);
         }
 
-        $governorate->load(['cities:id,governorate_id,name', 'defaultShipper:id,name']);
+        $this->syncGovernorateShippers($governorate, $data['shipper_user_ids'] ?? [], $data['default_shipper_user_id'] ?? null);
+
+        $governorate->load(['cities:id,governorate_id,name', 'defaultShipper:id,name', 'shippers:id,name']);
 
         return response()->json([
             'message' => 'Area created successfully.',
@@ -72,7 +76,7 @@ class GovernorateController extends Controller
         $this->authorizePermission($request, 'area.page');
         $this->authorizePermission($request, 'area.view');
 
-        $governorate->load(['cities:id,governorate_id,name', 'defaultShipper:id,name']);
+        $governorate->load(['cities:id,governorate_id,name', 'defaultShipper:id,name', 'shippers:id,name']);
 
         return response()->json($this->filterVisibleGovernorateColumns($request, $governorate));
     }
@@ -85,6 +89,8 @@ class GovernorateController extends Controller
             'name'                    => ['required', 'string', 'max:255', Rule::unique('governorates', 'name')->ignore($governorate->id)],
             'follow_up_hours'         => ['required', 'integer', 'min:0'],
             'default_shipper_user_id' => ['nullable', 'integer', 'exists:users,id'],
+            'shipper_user_ids'        => ['nullable', 'array'],
+            'shipper_user_ids.*'      => ['integer', 'exists:users,id', 'distinct'],
             'cities'                  => ['nullable', 'array'],
             'cities.*'                => ['required', 'string', 'max:255', 'distinct'],
         ]);
@@ -120,7 +126,9 @@ class GovernorateController extends Controller
             }
         }
 
-        $governorate->load(['cities:id,governorate_id,name', 'defaultShipper:id,name']);
+        $this->syncGovernorateShippers($governorate, $data['shipper_user_ids'] ?? [], $data['default_shipper_user_id'] ?? null);
+
+        $governorate->load(['cities:id,governorate_id,name', 'defaultShipper:id,name', 'shippers:id,name']);
 
         return response()->json([
             'message' => 'Area updated successfully.',
@@ -162,7 +170,7 @@ class GovernorateController extends Controller
      */
     private function filterVisibleGovernorateColumns(Request $request, Governorate $governorate): array
     {
-        $governorate->loadMissing(['cities:id,governorate_id,name,created_at,updated_at', 'defaultShipper:id,name']);
+        $governorate->loadMissing(['cities:id,governorate_id,name,created_at,updated_at', 'defaultShipper:id,name', 'shippers:id,name']);
 
         $payload = [
             'id' => $governorate->id,
@@ -173,6 +181,14 @@ class GovernorateController extends Controller
                 'id' => $governorate->defaultShipper->id,
                 'name' => $governorate->defaultShipper->name,
             ] : null,
+            'shipper_user_ids' => $governorate->shippers->pluck('id')->values()->all(),
+            'shippers' => $governorate->shippers
+                ->map(fn ($shipper): array => [
+                    'id' => $shipper->id,
+                    'name' => $shipper->name,
+                ])
+                ->values()
+                ->all(),
             'cities' => $governorate->cities
                 ->map(fn (City $city): array => $this->filterVisibleCityColumns($request, $city))
                 ->values()
@@ -188,6 +204,18 @@ class GovernorateController extends Controller
         }
 
         return $payload;
+    }
+
+    /**
+     * @param  array<int, int|string>  $shipperUserIds
+     */
+    private function syncGovernorateShippers(Governorate $governorate, array $shipperUserIds, int|string|null $defaultShipperUserId): void
+    {
+        if ($defaultShipperUserId) {
+            $shipperUserIds[] = $defaultShipperUserId;
+        }
+
+        $governorate->shippers()->sync(array_values(array_unique(array_map('intval', array_filter($shipperUserIds)))));
     }
 
     /**

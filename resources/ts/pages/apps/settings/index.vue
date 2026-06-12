@@ -1,7 +1,63 @@
 <script setup lang="ts">
 import { useNotificationStore } from '@/stores/useNotificationStore'
 
-const settingsData = ref<any>({})
+// const settingsData = ref<any>({})
+const settingsData = ref<any>({
+  site_identity: {
+    site_name: '',
+    site_email: '',
+    site_phone: '',
+    site_address: '',
+    site_maintenance_mode: 'false',
+  },
+
+  working_hours: {
+    working_hours_orders_start: '',
+    working_hours_orders_end: '',
+    working_hours_pickups_start: '',
+    working_hours_pickups_end: '',
+  },
+
+  orders: {
+    order_prefix: '',
+    order_digits: '',
+  },
+
+  collections: {
+    order_follow_up_hours: '',
+  },
+
+  plans: {
+    welcome_plans: '',
+  },
+
+  financial_formulas: {
+    formula_company_amount: '',
+    formula_cod_amount: '',
+    formula_shipper_collection_net_amount: '',
+    formula_client_settlement_net_amount: '',
+  },
+
+  whatsapp: {
+    whatsapp_enabled: 'false',
+    whatsapp_replace_order_notifications: 'no',
+    whatsapp_group_id: '',
+    whatsapp_service_url: '',
+  },
+
+  site_theme: {
+    site_color_primary_light: '#7367f0',
+    site_color_primary_dark: '#7367f0',
+  },
+
+  social_media: {
+    social_facebook: '',
+    social_instagram: '',
+    social_x: '',
+    social_whatsapp: '',
+  },
+})
+
 const activeTab = ref('site_identity')
 const plansList = ref<any[]>([])
 const notificationStore = useNotificationStore()
@@ -13,9 +69,66 @@ definePage({
   },
 })
 
+// const fetchSettings = async () => {
+//   const response = await $api('/settings')
+//   settingsData.value = response
+// }
+
 const fetchSettings = async () => {
-  const response = await $api('/settings')
-  settingsData.value = response
+  try {
+    const response = await $api('/settings')
+
+    settingsData.value = {
+      ...settingsData.value,
+
+      site_identity: {
+        ...settingsData.value.site_identity,
+        ...(response.site_identity || {}),
+      },
+
+      working_hours: {
+        ...settingsData.value.working_hours,
+        ...(response.working_hours || {}),
+      },
+
+      orders: {
+        ...settingsData.value.orders,
+        ...(response.orders || {}),
+      },
+
+      collections: {
+        ...settingsData.value.collections,
+        ...(response.collections || {}),
+      },
+
+      plans: {
+        ...settingsData.value.plans,
+        ...(response.plans || {}),
+      },
+
+      financial_formulas: {
+        ...settingsData.value.financial_formulas,
+        ...(response.financial_formulas || {}),
+      },
+
+      whatsapp: {
+        ...settingsData.value.whatsapp,
+        ...(response.whatsapp || {}),
+      },
+
+      site_theme: {
+        ...settingsData.value.site_theme,
+        ...(response.site_theme || {}),
+      },
+
+      social_media: {
+        ...settingsData.value.social_media,
+        ...(response.social_media || {}),
+      },
+    }
+  } catch (error) {
+    console.error('Failed to fetch settings:', error)
+  }
 }
 
 const fetchPlans = async () => {
@@ -94,7 +207,16 @@ const onFileChange = (e: Event, key: 'icon' | 'logoLight' | 'logoDark') => {
   }
 }
 
-const whatsappStatus = ref<{ ready: boolean; has_qr?: boolean; message?: string } | null>(null)
+const whatsappStatus = ref<{
+  ready: boolean
+  has_qr?: boolean
+  message?: string
+  status?: string
+  last_error?: string | null
+  last_disconnect_reason?: string | null
+  api_secret_configured?: boolean
+  started_at?: string
+} | null>(null)
 const whatsappQr = ref<string | null>(null)
 const whatsappGroups = ref<Array<{ id: string; name: string }>>([])
 const whatsappGroupsLoading = ref(false)
@@ -108,6 +230,11 @@ const checkWhatsAppStatus = async () => {
       ready: !!response.ready,
       has_qr: !!response.has_qr,
       message: response.message,
+      status: response.status,
+      last_error: response.last_error,
+      last_disconnect_reason: response.last_disconnect_reason,
+      api_secret_configured: response.api_secret_configured,
+      started_at: response.started_at,
     }
 
     if (response.ready) {
@@ -149,6 +276,19 @@ const fetchWhatsAppGroups = async () => {
   }
 }
 
+const restartWhatsApp = async () => {
+  try {
+    await $api('/whatsapp/restart', { method: 'POST' })
+    whatsappQr.value = null
+    await checkWhatsAppStatus()
+  } catch {
+    whatsappStatus.value = {
+      ready: false,
+      message: 'Could not restart WhatsApp service from dashboard.',
+    }
+  }
+}
+
 const startWhatsAppPolling = () => {
   stopWhatsAppPolling()
   whatsappPollTimer = setInterval(() => {
@@ -169,6 +309,7 @@ const tabs = [
   { title: 'Identity & Branding', value: 'site_identity', icon: 'tabler-info-circle' },
   { title: 'Working Hours', value: 'working_hours', icon: 'tabler-clock' },
   { title: 'Orders & Plans', value: 'orders', icon: 'tabler-shopping-cart' },
+  { title: 'Financial Formulas', value: 'financial_formulas', icon: 'tabler-calculator' },
   { title: 'WhatsApp Log', value: 'whatsapp', icon: 'tabler-brand-whatsapp' },
   { title: 'Site Color (Primary)', value: 'site_theme', icon: 'tabler-palette' },
   { title: 'Social Media', value: 'social_media', icon: 'tabler-brand-facebook' },
@@ -329,6 +470,43 @@ onBeforeUnmount(() => {
                 </VCol>
                 <VCol cols="12" md="6">
                   <AppTextField v-model="settingsData.collections.order_follow_up_hours" label="Follow-up Hours" type="number" />
+                </VCol>
+              </VRow>
+            </VWindowItem>
+
+            <!-- Financial Formulas -->
+            <VWindowItem value="financial_formulas">
+              <VRow>
+                <VCol cols="12">
+                  <h6 class="text-h6 mb-4">Financial Formulas</h6>
+                </VCol>
+                <VCol cols="12" md="6">
+                  <AppTextField
+                    v-model="settingsData.financial_formulas.formula_company_amount"
+                    label="Company Amount"
+                    placeholder="shipping_fee - commission_amount"
+                  />
+                </VCol>
+                <VCol cols="12" md="6">
+                  <AppTextField
+                    v-model="settingsData.financial_formulas.formula_cod_amount"
+                    label="COD Amount"
+                    placeholder="total_amount - shipping_fee"
+                  />
+                </VCol>
+                <VCol cols="12" md="6">
+                  <AppTextField
+                    v-model="settingsData.financial_formulas.formula_shipper_collection_net_amount"
+                    label="Shipper Collection Net"
+                    placeholder="total_amount - commission_amount"
+                  />
+                </VCol>
+                <VCol cols="12" md="6">
+                  <AppTextField
+                    v-model="settingsData.financial_formulas.formula_client_settlement_net_amount"
+                    label="Client Settlement Net"
+                    placeholder="cod_amount - settlement_fees"
+                  />
                 </VCol>
               </VRow>
             </VWindowItem>
@@ -539,4 +717,3 @@ onBeforeUnmount(() => {
   border-radius: 8px;
 }
 </style>
-

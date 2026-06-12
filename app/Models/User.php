@@ -40,6 +40,17 @@ class User extends Authenticatable
         return $this->hasOne(Shipper::class);
     }
 
+    public function shipperGovernorates()
+    {
+        return $this->belongsToMany(Governorate::class, 'governorate_shipper', 'shipper_user_id', 'governorate_id')
+            ->withTimestamps();
+    }
+
+    public function defaultGovernorates()
+    {
+        return $this->hasMany(Governorate::class, 'default_shipper_user_id');
+    }
+
     public function client()
     {
         return $this->hasOne(Client::class);

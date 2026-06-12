@@ -8,6 +8,7 @@ use App\Models\Order;
 use App\Models\ShipperCollection;
 use App\Models\ShipperCollectionOrder;
 use App\Support\Permissions\CollectionsReturnsSettlementsPermissionMap;
+use App\Support\Services\FinancialFormulaService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -606,7 +607,16 @@ class ShipperCollectionController extends Controller
 
     private function resolveCollectionAmount(Order $order): float
     {
-        return round(max(((float) $order->total_amount) - ((float) $order->commission_amount), 0), 2);
+        $amount = app(FinancialFormulaService::class)->calculate('formula_shipper_collection_net_amount', [
+            'total_amount' => (float) $order->total_amount,
+            'shipping_fee' => (float) $order->shipping_fee,
+            'commission_amount' => (float) $order->commission_amount,
+            'company_amount' => (float) $order->company_amount,
+            'cod_amount' => (float) $order->cod_amount,
+            'settlement_fees' => 0,
+        ]);
+
+        return round(max($amount, 0), 2);
     }
 
     public function removeOrder(Request $request, ShipperCollection $shipperCollection, Order $order): JsonResponse
