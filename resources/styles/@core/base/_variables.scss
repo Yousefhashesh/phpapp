@@ -18,7 +18,7 @@
 );
 @use "@layouts/styles/variables" as *;
 
-// 👉 Default layout
+//    Default layout
 
 $navbar-high-emphasis-text: true !default;
 
@@ -35,11 +35,11 @@ $theme-colors-name: (
   "warning"
 ) !default;
 
-// 👉 Default layout with vertical nav
+//    Default layout with vertical nav
 
 $default-layout-with-vertical-nav-navbar-footer-roundness: 10px !default;
 
-// 👉 Vertical nav
+//    Vertical nav
 $vertical-nav-background-color-rgb: var(--v-theme-background) !default;
 $vertical-nav-background-color: rgb(#{$vertical-nav-background-color-rgb}) !default;
 
@@ -81,7 +81,7 @@ $vertical-nav-nav-group-arrow-transition-duration: 0.15s !default;
 // Timing function for nav group arrow
 $vertical-nav-nav-group-arrow-transition-timing-function: ease-in-out !default;
 
-// 👉 Horizontal nav
+//    Horizontal nav
 
 /*
     ❗ Heads up
@@ -107,16 +107,16 @@ $horizontal-nav-popper-content-max-height: calc(100dvh - 120px - 4rem) !default;
 // ℹ️ This variable is used for horizontal nav popper content's `margin-top` and "The bridge"'s height. We need to sync both values.
 $horizontal-nav-popper-content-top: calc($horizontal-nav-padding + 0.375rem) !default;
 
-// 👉 Plugins
+//    Plugins
 
 $plugin-ps-thumb-y-dark: rgba(var(--v-theme-surface-variant), 0.35) !default;
 
-// 👉 Vuetify
+//    Vuetify
 
 // Used in src/@core-scss/base/libs/vuetify/_overrides.scss
 $vuetify-reduce-default-compact-button-icon-size: true !default;
 
-// 👉 Custom variables
+//    Custom variables
 // for utility classes
 $font-sizes: () !default;
 $font-sizes: map-deep-merge(

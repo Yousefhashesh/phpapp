@@ -53,7 +53,7 @@ watch(visibleHeaderKeys, (newVal) => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(newVal))
 })
 
-// 👉 Fetching Refused Reasons
+//    Fetching Refused Reasons
 const { data: refusedReasonsData, execute: fetchRefusedReasons } = await useApi<any>(createUrl('/refused-reasons', {
   query: {
     q: searchQuery,
@@ -98,7 +98,7 @@ const resolveStatusVariant = (status: string) => {
 <template>
   <section>
     <VCard>
-      <!-- 👉 Search & Adds -->
+      <!--    Search & Adds -->
       <VCardText class="d-flex flex-wrap gap-4">
         <div class="app-user-search-filter d-flex align-center flex-wrap gap-4">
           <div style="inline-size: 15.625rem;">
@@ -116,7 +116,7 @@ const resolveStatusVariant = (status: string) => {
             Add Reason
           </VBtn>
 
-          <!-- 👉 Column Visibility Toggle -->
+          <!--    Column Visibility Toggle -->
           <VMenu :close-on-content-click="false">
             <template #activator="{ props }">
               <VBtn icon variant="tonal" color="secondary" v-bind="props">

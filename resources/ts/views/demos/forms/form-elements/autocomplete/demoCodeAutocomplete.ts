@@ -854,7 +854,7 @@ const items = ['California', 'Colorado', 'Florida', 'Georgia', 'Texas', 'Wyoming
       cols="12"
       md="6"
     >
-      <!-- 👉 solo variant  -->
+      <!--    solo variant  -->
       <VAutocomplete
         variant="solo"
         label="Solo"
@@ -867,7 +867,7 @@ const items = ['California', 'Colorado', 'Florida', 'Georgia', 'Texas', 'Wyoming
       cols="12"
       md="6"
     >
-      <!-- 👉 outlined variant -->
+      <!--    outlined variant -->
       <VAutocomplete
         variant="outlined"
         label="Outlined"
@@ -880,7 +880,7 @@ const items = ['California', 'Colorado', 'Florida', 'Georgia', 'Texas', 'Wyoming
       cols="12"
       md="6"
     >
-      <!-- 👉 underlined variant -->
+      <!--    underlined variant -->
       <VAutocomplete
         variant="underlined"
         label="Underlined"
@@ -893,7 +893,7 @@ const items = ['California', 'Colorado', 'Florida', 'Georgia', 'Texas', 'Wyoming
       cols="12"
       md="6"
     >
-      <!-- 👉 filled variant  -->
+      <!--    filled variant  -->
       <VAutocomplete
         variant="filled"
         label="Filled"
@@ -906,7 +906,7 @@ const items = ['California', 'Colorado', 'Florida', 'Georgia', 'Texas', 'Wyoming
       cols="12"
       md="6"
     >
-      <!--  👉 plain variant -->
+      <!--     plain variant -->
       <VAutocomplete
         variant="plain"
         label="Plain"
@@ -934,7 +934,7 @@ const items = [
       cols="12"
       md="6"
     >
-      <!-- 👉 solo variant  -->
+      <!--    solo variant  -->
       <VAutocomplete
         variant="solo"
         label="Solo"
@@ -947,7 +947,7 @@ const items = [
       cols="12"
       md="6"
     >
-      <!-- 👉 outlined variant -->
+      <!--    outlined variant -->
       <VAutocomplete
         variant="outlined"
         label="Outlined"
@@ -960,7 +960,7 @@ const items = [
       cols="12"
       md="6"
     >
-      <!-- 👉 underlined variant -->
+      <!--    underlined variant -->
       <VAutocomplete
         variant="underlined"
         label="Underlined"
@@ -973,7 +973,7 @@ const items = [
       cols="12"
       md="6"
     >
-      <!-- 👉 filled variant  -->
+      <!--    filled variant  -->
       <VAutocomplete
         variant="filled"
         label="Filled"
@@ -986,7 +986,7 @@ const items = [
       cols="12"
       md="6"
     >
-      <!--  👉 plain variant -->
+      <!--     plain variant -->
       <VAutocomplete
         variant="plain"
         label="Plain"

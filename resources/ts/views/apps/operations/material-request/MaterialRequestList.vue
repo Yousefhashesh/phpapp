@@ -18,7 +18,7 @@ const headers = [
 
 const searchQuery = ref('')
 
-// 👉 Fetching Material Requests
+//    Fetching Material Requests
 const { data: requestsData, execute: fetchRequests } = await useApi<any>(createUrl('/material-requests', {
   query: {
     q: searchQuery,
@@ -111,7 +111,7 @@ const handleFormSubmit = () => {
 <template>
   <section>
     <VCard>
-      <!-- 👉 Search & Adds -->
+      <!--    Search & Adds -->
       <VCardText class="d-flex flex-wrap gap-4">
         <div class="app-user-search-filter d-flex align-center flex-wrap gap-4">
           <div style="inline-size: 15.625rem;">
@@ -129,7 +129,7 @@ const handleFormSubmit = () => {
             Add Request
           </VBtn>
 
-          <!-- 👉 Column Visibility Toggle -->
+          <!--    Column Visibility Toggle -->
           <VMenu :close-on-content-click="false">
             <template #activator="{ props }">
               <VBtn icon variant="tonal" color="secondary" v-bind="props">

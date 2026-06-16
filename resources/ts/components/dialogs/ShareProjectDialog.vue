@@ -91,7 +91,7 @@ const membersList: Member[] = [
     :width="$vuetify.display.smAndDown ? 'auto' : 900"
     @update:model-value="dialogVisibleUpdate"
   >
-    <!-- 👉 Dialog close btn -->
+    <!--    Dialog close btn -->
     <DialogCloseBtn @click="$emit('update:isDialogVisible', false)" />
 
     <VCard class="share-project-dialog pa-2 pa-sm-10">

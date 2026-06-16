@@ -25,7 +25,7 @@ const updateOptions = (options: any) => {
 
 const isLoading = ref(false)
 
-// 👉 Determine Endpoint and Base Params
+//    Determine Endpoint and Base Params
 const endpoint = computed(() => {
   if (props.userData.account_type === 1) return '/client-settlements'
   if (props.userData.account_type === 2) return '/shipper-collections'
@@ -38,7 +38,7 @@ const baseParams = computed(() => {
   return {}
 })
 
-// 👉 headers
+//    headers
 const headers = computed(() => {
   const common = [
     { title: '#ID', key: 'id' },
@@ -52,7 +52,7 @@ const headers = computed(() => {
   return common
 })
 
-// 👉 Fetch Data
+//    Fetch Data
 const { data: listData, execute: fetchList } = await useApi<any>(createUrl(endpoint.value, {
   query: {
     ...baseParams.value,
@@ -66,7 +66,7 @@ const { data: listData, execute: fetchList } = await useApi<any>(createUrl(endpo
 const items = computed(() => listData.value?.data || listData.value || [])
 const totalItems = computed(() => listData.value?.total || 0)
 
-// 👉 Status variant resolver
+//    Status variant resolver
 const resolveStatusVariant = (status: string) => {
   if (status === 'COMPLETED' || status === 'Paid' || status === 'APPROVED')
     return { variant: 'success', icon: 'tabler-circle-check' }

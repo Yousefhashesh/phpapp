@@ -42,7 +42,7 @@ const onSubmit = () => {
 <template>
   <VCard>
     <VCardText>
-      <!-- 👉 Stepper -->
+      <!--    Stepper -->
       <AppStepper
         v-model:current-step="currentStep"
         :items="numberedSteps"
@@ -53,7 +53,7 @@ const onSubmit = () => {
     <VDivider />
 
     <VCardText>
-      <!-- 👉 stepper content -->
+      <!--    stepper content -->
       <VForm>
         <VWindow
           v-model="currentStep"

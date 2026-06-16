@@ -39,7 +39,7 @@ dist-ssr
 /cypress/videos/
 /cypress/screenshots/
 
-# 👉 Custom Git ignores
+#    Custom Git ignores
 
 # Editor directories and files
 .vscode/*

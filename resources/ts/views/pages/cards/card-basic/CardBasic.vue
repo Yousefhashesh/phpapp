@@ -22,7 +22,7 @@ const isCardDetailsVisible = ref(false)
 
 <template>
   <VRow>
-    <!-- 👉 Influencing The Influencer -->
+    <!--    Influencing The Influencer -->
     <VCol
       cols="12"
       sm="6"
@@ -44,7 +44,7 @@ const isCardDetailsVisible = ref(false)
       </VCard>
     </VCol>
 
-    <!-- 👉 Robert Meyer -->
+    <!--    Robert Meyer -->
     <VCol
       cols="12"
       sm="6"
@@ -91,7 +91,7 @@ const isCardDetailsVisible = ref(false)
       </VCard>
     </VCol>
 
-    <!-- 👉 Popular Uses Of The Internet -->
+    <!--    Popular Uses Of The Internet -->
     <VCol
       cols="12"
       md="4"
@@ -135,7 +135,7 @@ const isCardDetailsVisible = ref(false)
       </VCard>
     </VCol>
 
-    <!-- 👉 Apple iPhone 11 Pro -->
+    <!--    Apple iPhone 11 Pro -->
     <VCol
       sm="6"
       cols="12"
@@ -181,7 +181,7 @@ const isCardDetailsVisible = ref(false)
       </VCard>
     </VCol>
 
-    <!-- 👉 Stump town Roasters. -->
+    <!--    Stump town Roasters. -->
     <VCol
       sm="6"
       cols="12"
@@ -224,7 +224,7 @@ const isCardDetailsVisible = ref(false)
       </VCard>
     </VCol>
 
-    <!-- 👉 Apple Watch card -->
+    <!--    Apple Watch card -->
     <VCol
       lg="4"
       sm="6"
@@ -256,7 +256,7 @@ const isCardDetailsVisible = ref(false)
       </VCard>
     </VCol>
 
-    <!-- 👉 Lifetime Membership -->
+    <!--    Lifetime Membership -->
     <VCol
       md="6"
       lg="8"
@@ -362,7 +362,7 @@ const isCardDetailsVisible = ref(false)
       </VCard>
     </VCol>
 
-    <!-- 👉 Influencing The Influencer -->
+    <!--    Influencing The Influencer -->
     <VCol
       cols="12"
       lg="4"
@@ -383,7 +383,7 @@ const isCardDetailsVisible = ref(false)
       </VCard>
     </VCol>
 
-    <!-- 👉 The Best Answers -->
+    <!--    The Best Answers -->
     <VCol
       cols="12"
       lg="4"
@@ -415,7 +415,7 @@ const isCardDetailsVisible = ref(false)
       </VCard>
     </VCol>
 
-    <!-- 👉 Support -->
+    <!--    Support -->
     <VCol
       cols="12"
       md="6"

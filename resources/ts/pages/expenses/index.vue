@@ -488,7 +488,7 @@ onMounted(async () => {
               Add Expense
             </VBtn>
 
-            <!-- 👉 Column Visibility Toggle -->
+            <!--    Column Visibility Toggle -->
             <VMenu :close-on-content-click="false">
               <template #activator="{ props }">
                 <VBtn icon variant="tonal" color="secondary" v-bind="props">

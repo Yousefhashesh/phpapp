@@ -1,7 +1,7 @@
 @use "@configured-variables" as variables;
 @use "@layouts/styles/mixins" as layoutsMixins;
 
-/* 👉 Demo spacers */
+/*    Demo spacers */
 
 /* TODO: Use vuetify SCSS variable here; */
 $card-spacer-content: 16px;
@@ -28,19 +28,19 @@ $card-spacer-content: 16px;
   }
 }
 
-// 👉 Card match height
+//    Card match height
 .match-height.v-row {
   .v-card {
     block-size: 100%;
   }
 }
 
-// 👉 Whitespace
+//    Whitespace
 .whitespace-no-wrap {
   white-space: nowrap;
 }
 
-// 👉 Colors
+//    Colors
 
 /*
   ℹ️ Vuetify is applying `.text-white` class to badge icon but don't provide its styles
@@ -86,7 +86,7 @@ $card-spacer-content: 16px;
   }
 }
 
-// 👉 clamp text
+//    clamp text
 .clamp-text {
   display: -webkit-box;
   overflow: hidden;
@@ -107,14 +107,14 @@ $card-spacer-content: 16px;
   line-height: normal !important;
 }
 
-// 👉 for rtl only
+//    for rtl only
 .flip-in-rtl {
   @include layoutsMixins.rtl {
     transform: scaleX(-1);
   }
 }
 
-// 👉 Carousel
+//    Carousel
 .carousel-delimiter-top-end {
   .v-carousel__controls {
     justify-content: end;

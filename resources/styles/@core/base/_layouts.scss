@@ -44,7 +44,7 @@
   }
 }
 
-// 👉 Floating navbar styles
+//    Floating navbar styles
 @if variables.$vertical-nav-navbar-style == "floating" {
   // ℹ️ Add spacing above navbar if navbar is floating (was in %layout-navbar-sticky placeholder)
   body .layout-wrapper.layout-nav-type-vertical.layout-navbar-sticky {

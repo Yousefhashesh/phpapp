@@ -3,7 +3,7 @@
 @use "@styles/variables/vuetify";
 @use "@configured-variables" as variables;
 
-// 👉 Checkbox
+//    Checkbox
 .v-checkbox {
   // We adjusted it to vertically align the label
 
@@ -18,9 +18,9 @@
   }
 }
 
-// 👉 checkbox size and box shadow
+//    checkbox size and box shadow
 .v-checkbox-btn {
-  // 👉 Checkbox icon opacity
+  //    Checkbox icon opacity
   .v-selection-control__input > .v-icon {
     opacity: 1;
   }

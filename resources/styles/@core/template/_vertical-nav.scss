@@ -3,7 +3,7 @@
 @use "@layouts/styles/mixins" as layoutsMixins;
 
 .layout-nav-type-vertical {
-  // 👉 Layout Vertical nav
+  //    Layout Vertical nav
   .layout-vertical-nav {
     color: rgba(var(--v-theme-on-background), var(--v-high-emphasis-opacity));
 
@@ -23,7 +23,7 @@
       padding-block: 0.25rem;
     }
 
-    // 👉 Nav group & Link
+    //    Nav group & Link
     .nav-link,
     .nav-group {
       /* shadow cut issue fix */

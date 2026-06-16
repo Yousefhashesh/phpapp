@@ -164,14 +164,14 @@ class OrdersImportSheet implements ToCollection, WithHeadingRow
 
         foreach ($rows as $index => $row) {
             $lineNumber = $index + 2;
-
+Log::info("Row {$lineNumber} Keys: " . json_encode($row->keys()->toArray()));
             // Check if Row has data
             $hasData = $row->filter(fn($v) => !is_null($v) && trim((string)$v) !== '')->count() > 0;
             if (!$hasData) continue;
 
             try {
                 // 1. Extract Client ID
-                $clientInfo = $this->getRowValue($row, ['id_client', 'client', 'amyl', 'العميل', 'amyl_id', 'vendor', 'mws_l', 'id_almyl', 'kwd_alamyl', 'alamyl']);
+                $clientInfo = $this->getRowValue($row, ['id_client', 'client', 'amyl', 'العميل', 'amyl_id', 'vendor', 'mws_l', 'id_almyl', 'kwd_alamyl', 'alamyl' , 'client']);
                 $clientUserId = null;
 
                 if ($clientInfo) {
@@ -186,12 +186,12 @@ class OrdersImportSheet implements ToCollection, WithHeadingRow
 
                 if (!$clientUserId) {
                     $availableKeys = implode(', ', $row->keys()->toArray());
-                    $sheetErrors[] = "Row {$lineNumber}: Client info not found or invalid. Got: '{$clientInfo}'. Headers: [{$availableKeys}]";
+                    $sheetErrors[] = "Row {$lineNumber}: Client info not found or invalid. Got:  الصف : {$lineNumber}' بيانات العميل غير صحيحة يرجى التحقق من البيانات . Headers: [{$availableKeys}]";
                     continue;
                 }
 
                 // 2. Validate Governorate & City
-                $govInput = trim((string)$this->getRowValue($row, ['governorate', 'mhafz', 'المحافظة', 'almhafzh', 'almhfth'], ''));
+                $govInput = trim((string)$this->getRowValue($row, ['governorate', 'mhafz', 'المحافظة', 'almhafzh', 'almhfth','Governorate'], ''));
                 $govNormalized = $this->normalizeArabic($govInput);
                 $govId = $governorates[$govNormalized] ?? null;
 
@@ -236,12 +236,12 @@ class OrdersImportSheet implements ToCollection, WithHeadingRow
                 }
 
                 // Clean Amount Output (remove spaces, symbols)
-                $amountValue = (string)$this->getRowValue($row, ['als_ar', 'السعر', 'alsaar', 'price', 'total', 'amount', 'امونت', 'ts_ar', 'tsaar', 'alkym'], 0);
+                $amountValue = (string)$this->getRowValue($row, ['als_ar', 'السعر', 'alsaar', 'price','total amount', 'total', 'amount', 'امونت', 'ts_ar', 'tsaar', 'alkym','الاجمالي' , 'الإجمالي'], 0);
                 $amountValue = preg_replace('/[^0-9.]/', '', $amountValue); // Keep only digits and dots
 
                 // 3. Build data
                 $orderData = [
-                    'external_code' => $this->getRowValue($row, ['kwd', 'code', 'external', 'alshrkh', 'extra', 'shrk', 'الشركة', 'kwd_alshrkh', 'alshrkh']),
+                    'external_code' => $this->getRowValue($row, ['External Code','kwd', 'code', 'external', 'كود الاضافي','alshrkh', 'extra', 'shrk', 'الشركة', 'kwd_alshrkh', 'alshrkh']),
                     'client_user_id' => $clientUserId,
                     'receiver_name' => $this->getRowValue($row, ['name', 'asm', 'الاسم', 'receiver', 'alasm']),
                     'phone' => $phoneInput,
@@ -250,10 +250,10 @@ class OrdersImportSheet implements ToCollection, WithHeadingRow
                     'city_id' => $cityId,
                     'address' => $this->getRowValue($row, ['address', 'onwan', 'العنوان', 'al-onwan', 'alonan']),
                     'total_amount' => (float)$amountValue,
-                    'order_note' => $this->getRowValue($row, ['almlhwzh', 'الملحوظة', 'note', 'almlhwzh', 'mlhwth'], null),
+                   'order_note' => $this->getRowValue($row, ['almlhwzh', 'الملحوظة','الملحوظه','الملحوظات', 'note', 'almlhwzh', 'mlhwth','almlhothat','almlhoth'], null),
                     'status' => $status, 
                     'created_by' => $this->userId,
-                    'approval_status' => 'APPROVED',
+                    'approval_status' => 'Pending',
                 ];
 
                 $orderData = $this->resolveDefaultShipper($orderData);

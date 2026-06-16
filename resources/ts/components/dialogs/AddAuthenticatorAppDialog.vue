@@ -37,7 +37,7 @@ const resetAuthCode = () => {
 
     <VCard class="pa-2 pa-sm-10">
       <VCardText>
-        <!-- 👉 Title -->
+        <!--    Title -->
         <h4 class="text-h4 text-center mb-6">
           Add Authenticator App
         </h4>

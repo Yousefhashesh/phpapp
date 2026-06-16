@@ -1,7 +1,7 @@
 import type { RouteRecordRaw } from 'vue-router/auto'
 
 
-// 👉 Redirects
+//    Redirects
 export const redirects: RouteRecordRaw[] = [
   {
     path: '/pages/user-profile',

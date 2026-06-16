@@ -19,7 +19,7 @@ const authThemeMask = useGenerateImageVariant(miscMaskLight, miscMaskDark)
 <template>
   <div class="misc-wrapper">
     <div>
-      <!-- 👉 Title and subtitle -->
+      <!--    Title and subtitle -->
       <div class="text-center mb-4">
         <h4 class="text-h4 font-weight-medium mb-2">
           We are launching soon 🚀
@@ -29,7 +29,7 @@ const authThemeMask = useGenerateImageVariant(miscMaskLight, miscMaskDark)
         </p>
       </div>
 
-      <!-- 👉 Email input -->
+      <!--    Email input -->
       <VForm
         class="d-flex flex-wrap align-center justify-center gap-4 misc-form"
         @submit.prevent="() => {}"
@@ -46,7 +46,7 @@ const authThemeMask = useGenerateImageVariant(miscMaskLight, miscMaskDark)
       </VForm>
     </div>
 
-    <!-- 👉 Image -->
+    <!--    Image -->
     <div class="misc-avatar w-100">
       <VImg
         :src="miscComingSoon"

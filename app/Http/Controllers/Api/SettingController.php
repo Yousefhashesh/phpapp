@@ -81,8 +81,10 @@ class SettingController extends Controller
             }
 
             Setting::query()
-                ->where('key', $key)
-                ->update(['value' => $value]);
+                ->updateOrCreate(
+                    ['key' => $key],
+                    ['group' => $group, 'value' => $value]
+                );
         }
 
         $allSettings = Setting::query()

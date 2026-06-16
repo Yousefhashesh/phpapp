@@ -7,12 +7,12 @@
     @extend %default-layout-horizontal-nav-navbar-and-nav-container;
   }
 
-  // 👉 Navbar
+  //    Navbar
   .layout-navbar {
     @extend %default-layout-horizontal-nav-navbar;
   }
 
-  // 👉 Layout content container
+  //    Layout content container
   .navbar-content-container {
     display: flex;
     align-items: center;
@@ -27,7 +27,7 @@
     }
   }
 
-  // 👉 App footer
+  //    App footer
   .layout-footer {
     @at-root {
       .layout-footer-sticky#{&} {

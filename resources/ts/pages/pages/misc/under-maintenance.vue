@@ -17,7 +17,7 @@ definePage({
 <template>
   <div class="misc-wrapper">
     <div class="text-center mb-15">
-      <!-- 👉 Title and subtitle -->
+      <!--    Title and subtitle -->
       <h4 class="text-h4 font-weight-medium mb-2">
         Under Maintenance! 🚧
       </h4>
@@ -30,7 +30,7 @@ definePage({
       </VBtn>
     </div>
 
-    <!-- 👉 Image -->
+    <!--    Image -->
     <div class="misc-avatar w-100 text-center">
       <VImg
         :src="miscUnderMaintenance"

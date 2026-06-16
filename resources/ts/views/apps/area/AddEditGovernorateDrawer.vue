@@ -29,7 +29,7 @@ const shipperIds = ref<number[]>([])
 const cities = ref<string[]>([])
 const newCityName = ref('')
 
-// 👉 Fetching Shippers
+//    Fetching Shippers
 const { data: shippersData } = await useApi<any>('/shippers')
 
 const shippers = computed(() => {

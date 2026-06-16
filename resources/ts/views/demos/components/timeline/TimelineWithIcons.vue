@@ -81,13 +81,13 @@ const earnings = [
             </VAvatar>
           </div>
         </template>
-        <!-- 👉 Header -->
+        <!--    Header -->
         <VCard class="mb-10 mt-n4">
           <VCardItem class="pb-4">
             <VCardTitle>You've uploaded doc pdf to the Pixinvent project</VCardTitle>
           </VCardItem>
           <VCardText>
-            <!-- 👉 Content -->
+            <!--    Content -->
             <p class="app-timeline-text mb-3">
               he process of recording the key project details and producing the documents that are required to implement it successfully. Simply put, it's an umbrella term which includes all the documents created over the course of the project.
             </p>

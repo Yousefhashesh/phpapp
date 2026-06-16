@@ -78,7 +78,7 @@ const addressTypes = [
     :model-value="props.isDialogVisible"
     @update:model-value="val => $emit('update:isDialogVisible', val)"
   >
-    <!-- 👉 Dialog close btn -->
+    <!--    Dialog close btn -->
     <DialogCloseBtn @click="$emit('update:isDialogVisible', false)" />
 
     <VCard
@@ -86,7 +86,7 @@ const addressTypes = [
       class="pa-sm-10 pa-2"
     >
       <VCardText>
-        <!-- 👉 Title -->
+        <!--    Title -->
         <h4 class="text-h4 text-center mb-2">
           {{ (props.billingAddress.addressLine1 || props.billingAddress.addressLine2) ? 'Edit' : 'Add New' }} Address
         </h4>
@@ -102,10 +102,10 @@ const addressTypes = [
           />
         </div>
 
-        <!-- 👉 Form -->
+        <!--    Form -->
         <VForm @submit.prevent="onFormSubmit">
           <VRow>
-            <!-- 👉 First Name -->
+            <!--    First Name -->
             <VCol
               cols="12"
               md="6"
@@ -117,7 +117,7 @@ const addressTypes = [
               />
             </VCol>
 
-            <!-- 👉 Last Name -->
+            <!--    Last Name -->
             <VCol
               cols="12"
               md="6"
@@ -129,7 +129,7 @@ const addressTypes = [
               />
             </VCol>
 
-            <!-- 👉 Select Country -->
+            <!--    Select Country -->
             <VCol cols="12">
               <AppSelect
                 v-model="billingAddress.selectedCountry"
@@ -139,7 +139,7 @@ const addressTypes = [
               />
             </VCol>
 
-            <!-- 👉 Address Line 1 -->
+            <!--    Address Line 1 -->
             <VCol cols="12">
               <AppTextField
                 v-model="billingAddress.addressLine1"
@@ -148,7 +148,7 @@ const addressTypes = [
               />
             </VCol>
 
-            <!-- 👉 Address Line 2 -->
+            <!--    Address Line 2 -->
             <VCol cols="12">
               <AppTextField
                 v-model="billingAddress.addressLine2"
@@ -157,7 +157,7 @@ const addressTypes = [
               />
             </VCol>
 
-            <!-- 👉 Landmark -->
+            <!--    Landmark -->
             <VCol
               cols="12"
               md="6"
@@ -169,7 +169,7 @@ const addressTypes = [
               />
             </VCol>
 
-            <!-- 👉 City -->
+            <!--    City -->
             <VCol
               cols="12"
               md="6"
@@ -181,7 +181,7 @@ const addressTypes = [
               />
             </VCol>
 
-            <!-- 👉 State -->
+            <!--    State -->
             <VCol
               cols="12"
               md="6"
@@ -193,7 +193,7 @@ const addressTypes = [
               />
             </VCol>
 
-            <!-- 👉 Zip Code -->
+            <!--    Zip Code -->
             <VCol
               cols="12"
               md="6"
@@ -210,7 +210,7 @@ const addressTypes = [
               <VSwitch label="Use as a billing address?" />
             </VCol>
 
-            <!-- 👉 Submit and Cancel button -->
+            <!--    Submit and Cancel button -->
             <VCol
               cols="12"
               class="text-center"

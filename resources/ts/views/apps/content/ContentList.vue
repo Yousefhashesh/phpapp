@@ -45,7 +45,7 @@ watch(visibleHeaderKeys, (newVal) => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(newVal))
 })
 
-// 👉 Fetching Contents
+//    Fetching Contents
 const { data: contentsData, execute: fetchContents } = await useApi<any>(createUrl('/contents', {
   query: {
     q: searchQuery,
@@ -82,7 +82,7 @@ const handleFormSubmit = () => {
 <template>
   <section>
     <VCard>
-      <!-- 👉 Search & Adds -->
+      <!--    Search & Adds -->
       <VCardText class="d-flex flex-wrap gap-4">
         <div class="app-user-search-filter d-flex align-center flex-wrap gap-4">
           <div style="inline-size: 15.625rem;">
@@ -100,7 +100,7 @@ const handleFormSubmit = () => {
             Add Content
           </VBtn>
 
-          <!-- 👉 Column Visibility Toggle -->
+          <!--    Column Visibility Toggle -->
           <VMenu :close-on-content-click="false">
             <template #activator="{ props }">
               <VBtn icon variant="tonal" color="secondary" v-bind="props">

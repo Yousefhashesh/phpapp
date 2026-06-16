@@ -4,7 +4,7 @@
 @use "@configured-variables" as variables;
 @use "@styles/variables/_vuetify.scss" as vuetify;
 
-// 👉 Avatar group
+//    Avatar group
 .v-avatar-group {
   display: flex;
   align-items: center;
@@ -30,7 +30,7 @@
   }
 }
 
-// 👉 Button outline with default color border color
+//    Button outline with default color border color
 .v-alert--variant-outlined,
 .v-avatar--variant-outlined,
 .v-btn.v-btn--variant-outlined,
@@ -46,7 +46,7 @@
   }
 }
 
-// 👉 Custom Input
+//    Custom Input
 .v-label.custom-input {
   padding: 1rem;
   border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
@@ -77,7 +77,7 @@
   }
 }
 
-// 👉 Datatable
+//    Datatable
 .v-data-table-footer__pagination {
   @include layoutMixins.rtl {
     .v-btn {
@@ -139,7 +139,7 @@
   }
 }
 
-// 👉 Expansion panel
+//    Expansion panel
 .v-expansion-panels.customized-panels {
   border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
   border-radius: vuetify.$border-radius-root;
@@ -189,7 +189,7 @@
   }
 }
 
-// 👉 Switch
+//    Switch
 .v-switch .v-selection-control:not(.v-selection-control--dirty) .v-switch__thumb {
   color: #fff !important;
 }

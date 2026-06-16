@@ -75,8 +75,8 @@ const fetchEligibleOrders = async () => {
 
   fetchingOrders.value = true
   const query = isClientUser.value
-    ? '/client-settlements/eligible-orders?per_page=100'
-    : `/client-settlements/eligible-orders?client_user_id=${formData.value.client_user_id}&per_page=100`
+    ? '/client-settlements/eligible-orders?per_page=100000'
+    : `/client-settlements/eligible-orders?client_user_id=${formData.value.client_user_id}&per_page=100000`
 
   const { data } = await useApi<any>(query).get().json()
   eligibleOrders.value = data.value?.data || []

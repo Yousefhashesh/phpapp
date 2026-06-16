@@ -20,7 +20,7 @@ const formatDate = (date: string) => {
 <template>
   <VRow>
     <VCol cols="12">
-      <!-- 👉 User Activity timeline -->
+      <!--    User Activity timeline -->
       <VCard title="Recent Activity & Sessions">
         <VCardText>
           <VTimeline

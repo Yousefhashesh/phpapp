@@ -75,8 +75,8 @@ const fetchEligibleOrders = async () => {
 
   fetchingOrders.value = true
   const query = isShipperUser.value
-    ? '/shipper-collections/eligible-orders?per_page=100'
-    : `/shipper-collections/eligible-orders?shipper_user_id=${formData.value.shipper_user_id}&per_page=100`
+    ? '/shipper-collections/eligible-orders?per_page=100000'
+    : `/shipper-collections/eligible-orders?shipper_user_id=${formData.value.shipper_user_id}&per_page=100000`
   const { data } = await useApi<any>(query).get().json()
   eligibleOrders.value = data.value?.data || []
   fetchingOrders.value = false

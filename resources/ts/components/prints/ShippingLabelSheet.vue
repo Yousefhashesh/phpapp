@@ -144,48 +144,18 @@ const notesText = computed(() => {
     </div>
   </section>
 
-  <section class="label-address-banner">
-    <span class="label-address-banner__key">الوجهة الكاملة</span>
-    <span class="label-address-banner__val">{{ fullAddress }}</span>
-  </section>
+  
 
   <section class="label-amounts label-amounts--4">
-    <div class="label-amount-box">
-      <span class="label-amount-box__key">مبلغ التحصيل (COD)</span>
-      <span class="label-amount-box__val">{{ formatPrintMoney(data.cod) }}</span>
-    </div>
+   
     <div class="label-amount-box">
       <span class="label-amount-box__key">الإجمالي المطلوب</span>
       <span class="label-amount-box__val">{{ formatPrintMoney(data.total_amount) }}</span>
     </div>
-    <div class="label-amount-box">
-      <span class="label-amount-box__key">رسوم الشحن</span>
-      <span class="label-amount-box__val">{{ formatPrintMoney(data.shipping_fee) }}</span>
-    </div>
-    <div class="label-amount-box">
-      <span class="label-amount-box__key">صافي الشركة</span>
-      <span class="label-amount-box__val">{{ formatPrintMoney(data.company_amount) }}</span>
-    </div>
+   
   </section>
 
-  <section class="label-grid label-grid--4">
-    <div class="label-cell">
-      <span class="label-cell__key">المندوب</span>
-      <span class="label-cell__val">{{ data.shipper_name || 'غير معيّن' }}</span>
-    </div>
-    <div class="label-cell">
-      <span class="label-cell__key">هاتف المندوب</span>
-      <span class="label-cell__val">{{ data.shipper_phone || '—' }}</span>
-    </div>
-    <div class="label-cell">
-      <span class="label-cell__key">حالة الشحنة</span>
-      <span class="label-cell__val">{{ formatLabelStatusAr(data.status) }}</span>
-    </div>
-    <div class="label-cell">
-      <span class="label-cell__key">تاريخ الإدخال</span>
-      <span class="label-cell__val">{{ formatLabelDate(data.created_at) }}</span>
-    </div>
-  </section>
+  
 
   <section class="label-policy">
     <div class="label-policy__item">
@@ -215,12 +185,6 @@ const notesText = computed(() => {
     <span class="label-notes__key">ملاحظات : </span>
     <span class="label-notes__val">{{ notesText }}</span>
   </section>
-
-  <footer class="label-footer">
-    <span>تاريخ الطباعة: {{ formatLabelTimestamp(new Date().toISOString()) }}</span>
-    <span v-if="data.shipper_date">تاريخ التسليم للمندوب: {{ formatLabelDate(data.shipper_date) }}</span>
-    <span>معرّف الطلب: #{{ data.order_id }}</span>
-  </footer>
   </article>
 </template>
 

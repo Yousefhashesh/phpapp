@@ -53,7 +53,7 @@ const fetchEligibleOrders = async () => {
   }
 
   fetchingOrders.value = true
-  const { data } = await useApi<any>(`/client-returns/eligible-orders?client_user_id=${formData.value.client_user_id}&per_page=100`).get().json()
+  const { data } = await useApi<any>(`/client-returns/eligible-orders?client_user_id=${formData.value.client_user_id}&per_page=100000`).get().json()
   eligibleOrders.value = data.value?.data || []
   fetchingOrders.value = false
 }

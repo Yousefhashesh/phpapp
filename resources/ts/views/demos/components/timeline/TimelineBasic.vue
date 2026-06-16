@@ -20,7 +20,7 @@ import pdf from '@images/icons/project-icons/pdf.png'
           dot-color="primary"
           size="x-small"
         >
-          <!-- 👉 Header -->
+          <!--    Header -->
           <div class="d-flex justify-space-between align-center gap-2 flex-wrap mb-2">
             <span class="app-timeline-title">
               12 Invoices have been paid
@@ -28,7 +28,7 @@ import pdf from '@images/icons/project-icons/pdf.png'
             <span class="app-timeline-meta">12 min ago</span>
           </div>
 
-          <!-- 👉 Content -->
+          <!--    Content -->
           <div class="app-timeline-text mt-1">
             Invoices have been paid to the company
           </div>
@@ -52,7 +52,7 @@ import pdf from '@images/icons/project-icons/pdf.png'
           size="x-small"
           dot-color="success"
         >
-          <!-- 👉 Header -->
+          <!--    Header -->
           <div class="d-flex justify-space-between align-center flex-wrap mb-2">
             <div class="app-timeline-title">
               Client Meeting
@@ -64,9 +64,9 @@ import pdf from '@images/icons/project-icons/pdf.png'
             Project meeting with john @10:15am
           </div>
 
-          <!-- 👉 Person -->
+          <!--    Person -->
           <div class="d-flex justify-space-between align-center flex-wrap">
-            <!-- 👉 Avatar & Personal Info -->
+            <!--    Avatar & Personal Info -->
             <div class="d-flex align-center mt-2">
               <VAvatar
                 size="32"
@@ -89,7 +89,7 @@ import pdf from '@images/icons/project-icons/pdf.png'
           size="x-small"
           dot-color="info"
         >
-          <!-- 👉 Header -->
+          <!--    Header -->
           <div class="d-flex justify-space-between align-center flex-wrap mb-2">
             <span class="app-timeline-title">
               Create a new project for client
@@ -97,7 +97,7 @@ import pdf from '@images/icons/project-icons/pdf.png'
             <span class="app-timeline-meta">2 Day Ago</span>
           </div>
 
-          <!-- 👉 Content -->
+          <!--    Content -->
           <p class="app-timeline-text mt-1 mb-2">
             6 team members in a project
           </p>

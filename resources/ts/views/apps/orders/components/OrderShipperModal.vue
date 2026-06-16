@@ -33,7 +33,7 @@ watch(() => props.order, (newVal) => {
 // When shipper changes, fetch their default commission
 watch(() => formData.value.shipper_user_id, (newShipperId) => {
   if (newShipperId && newShipperId !== props.order?.shipper_user_id) {
-    const selectedShipper = props.shippers.find(s => s.user_id === newShipperId)
+    const selectedShipper = props.shippers.find(s => s.id === newShipperId)
     if (selectedShipper) {
        formData.value.commission_amount = Number(selectedShipper.commission_rate || 0)
     }
@@ -104,15 +104,17 @@ const onSubmit = async () => {
 
         <VRow>
           <VCol cols="12">
-            <AppSelect
-              v-model="formData.shipper_user_id"
-              label="Select Shipper"
-              placeholder="Choose a shipper"
-              :items="props.shippers"
-              item-title="name"
-              item-value="id"
-              clearable
-            />
+          <AppAutocomplete
+  v-model="formData.shipper_user_id"
+  label="Select Shipper"
+  placeholder="Search shipper..."
+  :items="props.shippers"
+  item-title="name"
+  item-value="id"
+  clearable
+  chips
+  closable-chips
+/>
           </VCol>
           
           <VCol cols="12">

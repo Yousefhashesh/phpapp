@@ -14,19 +14,19 @@ export const cookieRef = <T>(key: string, defaultValue: T) => {
 export const useLayoutConfigStore = defineStore('layoutConfig', () => {
   const route = useRoute()
 
-  // 👉 Navbar Type
+  //    Navbar Type
   const navbarType = ref(layoutConfig.navbar.type)
 
-  // 👉 Navbar Type
+  //    Navbar Type
   const isNavbarBlurEnabled = cookieRef('isNavbarBlurEnabled', layoutConfig.navbar.navbarBlur)
 
-  // 👉 Vertical Nav Collapsed
+  //    Vertical Nav Collapsed
   const isVerticalNavCollapsed = cookieRef('isVerticalNavCollapsed', layoutConfig.verticalNav.isVerticalNavCollapsed)
 
-  // 👉 App Content Width
+  //    App Content Width
   const appContentWidth = cookieRef('appContentWidth', layoutConfig.app.contentWidth)
 
-  // 👉 App Content Layout Nav
+  //    App Content Layout Nav
   const appContentLayoutNav = ref(layoutConfig.app.contentLayoutNav)
 
   watch(appContentLayoutNav, val => {
@@ -39,16 +39,16 @@ export const useLayoutConfigStore = defineStore('layoutConfig', () => {
     }
   })
 
-  // 👉 Horizontal Nav Type
+  //    Horizontal Nav Type
   const horizontalNavType = ref(layoutConfig.horizontalNav.type)
 
-  //  👉 Horizontal Nav Popover Offset
+  //     Horizontal Nav Popover Offset
   const horizontalNavPopoverOffset = ref(layoutConfig.horizontalNav.popoverOffset)
 
-  // 👉 Footer Type
+  //    Footer Type
   const footerType = ref(layoutConfig.footer.type)
 
-  // 👉 Misc
+  //    Misc
   const breakpointRef = ref(false)
 
   // Sync with `useMediaQuery`
@@ -67,7 +67,7 @@ export const useLayoutConfigStore = defineStore('layoutConfig', () => {
     },
   })
 
-  // 👉 Layout Classes
+  //    Layout Classes
   const _layoutClasses = computed(() => {
     const { y: windowScrollY } = useWindowScroll()
 
@@ -89,7 +89,7 @@ export const useLayoutConfigStore = defineStore('layoutConfig', () => {
     ]
   })
 
-  // 👉 RTL
+  //    RTL
   // const isAppRTL = ref(layoutConfig.app.isRTL)
   const isAppRTL = ref(false)
 
@@ -97,7 +97,7 @@ export const useLayoutConfigStore = defineStore('layoutConfig', () => {
     _setDirAttr(val ? 'rtl' : 'ltr')
   })
 
-  // 👉 Is Vertical Nav Mini
+  //    Is Vertical Nav Mini
   /*
     This function will return true if current state is mini. Mini state means vertical nav is:
       - Collapsed

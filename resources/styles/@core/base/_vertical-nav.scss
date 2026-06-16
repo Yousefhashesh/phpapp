@@ -6,7 +6,7 @@
 @use "vuetify/lib/styles/tools/states" as vuetifyStates;
 
 .layout-nav-type-vertical {
-  // 👉 Layout Vertical nav
+  //    Layout Vertical nav
   .layout-vertical-nav {
     $sl-layout-nav-type-vertical: &;
 
@@ -21,7 +21,7 @@
 
     background-color: variables.$vertical-nav-background-color;
 
-    // 👉 Nav header
+    //    Nav header
     .nav-header {
       overflow: hidden;
       padding: variables.$vertical-nav-header-padding;
@@ -50,7 +50,7 @@
       }
     }
 
-    // 👉 Nav items shadow
+    //    Nav items shadow
     .vertical-nav-items-shadow {
       position: absolute;
       z-index: 1;
@@ -85,7 +85,7 @@
       z-index: 1;
     }
 
-    // 👉 Nav section title
+    //    Nav section title
     .nav-section-title {
       @extend %vertical-nav-item;
       @extend %vertical-nav-section-title;
@@ -106,7 +106,7 @@
       @extend %vertical-nav-item-badge;
     }
 
-    // 👉 Nav group & Link
+    //    Nav group & Link
     .nav-link,
     .nav-group {
       overflow: hidden;
@@ -130,7 +130,7 @@
       }
     }
 
-    // 👉 Vertical nav link
+    //    Vertical nav link
     .nav-link {
       @extend %nav-link;
 
@@ -150,7 +150,7 @@
       }
     }
 
-    // 👉 Vertical nav group
+    //    Vertical nav group
     .nav-group {
       // Reduce the size of icon if link/group is inside group
       .nav-group,

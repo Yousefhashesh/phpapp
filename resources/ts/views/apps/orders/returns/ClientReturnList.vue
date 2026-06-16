@@ -11,7 +11,7 @@ const selectedStatus = ref<string | null>(null)
 const selectedApprovalStatus = ref<string | null>(null)
 const selectedClient = ref<number | null>(null)
 
-// 👉 Headers
+//    Headers
 const headers = [
   { title: '#ID', key: 'id' },
   { title: 'Client', key: 'client' },
@@ -69,7 +69,7 @@ watch(searchQuery, val => {
   }, 400)
 })
 
-// 👉 Fetching Returns
+//    Fetching Returns
 const { data: returnsData, execute: fetchReturns, isFetching } = useApi<any>(createUrl('/client-returns', {
   query: {
     status: selectedStatus,
@@ -97,7 +97,7 @@ const visibleTotals = computed(() => {
 const statusColors: any = { PENDING: 'warning', COMPLETED: 'success', CANCELLED: 'error' }
 const approvalColors: any = { PENDING: 'warning', APPROVED: 'success', REJECTED: 'error' }
 
-// 👉 Actions
+//    Actions
 const isDetailsDialogVisible = ref(false)
 const selectedReturn = ref<any>(null)
 const isCreateDialogVisible = ref(false)
@@ -207,7 +207,7 @@ const bulkUpdateStatus = async (status: string) => {
 const printInvoice = (id: number) => {
   window.open(`/apps/orders/print/${id}?type=client-return`, '_blank')
 }
-// 👉 Export
+//    Export
 
 const exportReturns = async () => {
   const params: any = {}
@@ -361,7 +361,7 @@ const exportReturns = async () => {
             Create Client Return
           </VBtn>
 
-          <!-- 👉 Column Visibility Toggle -->
+          <!--    Column Visibility Toggle -->
           <VMenu :close-on-content-click="false">
             <template #activator="{ props }">
               <VBtn icon variant="tonal" color="secondary" v-bind="props">

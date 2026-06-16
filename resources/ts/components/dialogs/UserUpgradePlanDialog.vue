@@ -28,7 +28,7 @@ const dialogModelValueUpdate = (val: boolean) => {
 </script>
 
 <template>
-  <!-- 👉 upgrade plan -->
+  <!--    upgrade plan -->
   <VDialog
     :width="$vuetify.display.smAndDown ? 'auto' : 650"
     :model-value="props.isDialogVisible"
@@ -39,7 +39,7 @@ const dialogModelValueUpdate = (val: boolean) => {
 
     <VCard class="pa-2 pa-sm-10">
       <VCardText>
-        <!-- 👉 Title -->
+        <!--    Title -->
         <h4 class="text-h4 text-center mb-2">
           Upgrade Plan
         </h4>
@@ -87,7 +87,7 @@ const dialogModelValueUpdate = (val: boolean) => {
         </div>
       </VCardText>
 
-      <!-- 👉 Confirm Dialog -->
+      <!--    Confirm Dialog -->
       <ConfirmDialog
         v-model:is-dialog-visible="isConfirmDialogVisible"
         cancel-title="Cancelled"

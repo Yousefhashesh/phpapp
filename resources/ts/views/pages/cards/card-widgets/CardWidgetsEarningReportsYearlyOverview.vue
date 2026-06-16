@@ -184,7 +184,7 @@ const moreList = [
           </div>
         </VSlideGroupItem>
 
-        <!-- 👉 slider more -->
+        <!--    slider more -->
         <VSlideGroupItem>
           <div
             style="block-size: 100px; inline-size: 110px;"

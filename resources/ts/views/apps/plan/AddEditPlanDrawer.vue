@@ -26,7 +26,7 @@ const name = ref('')
 const orderCount = ref(0)
 const prices = ref<any[]>([])
 
-// 👉 Fetching Governorates for selection
+//    Fetching Governorates for selection
 const { data: governoratesData } = await useApi<any>('/governorates')
 const governorates = computed(() => governoratesData.value || [])
 
@@ -107,7 +107,7 @@ const handleDrawerModelValueUpdate = (val: boolean) => {
     :model-value="props.isDrawerOpen"
     @update:model-value="handleDrawerModelValueUpdate"
   >
-    <!-- 👉 Header -->
+    <!--    Header -->
     <AppDrawerHeaderSection
       :title="id ? 'Update Plan' : 'Add Plan'"
       @cancel="closeNavigationDrawer"
@@ -118,7 +118,7 @@ const handleDrawerModelValueUpdate = (val: boolean) => {
     <PerfectScrollbar :options="{ wheelPropagation: false }">
       <VCard flat>
         <VCardText>
-          <!-- 👉 Form -->
+          <!--    Form -->
           <VForm
             ref="refForm"
             v-model="isFormValid"

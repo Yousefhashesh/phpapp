@@ -83,11 +83,12 @@ class OrderController extends Controller
             'shipping_content_id' => ['nullable', 'integer', 'exists:content,id'],
             'allow_open' => ['nullable', 'boolean'],
             'order_note' => ['nullable', 'string'],
+            // 'shipping_fee'=>['nullable', 'numeric', 'min:0']
         ]);
 
         $this->authorizeEditableColumns($request, array_keys($data));
 
-        $this->authorizeClientShipperMatchesGovernorate($request, $data);
+       // $this->authorizeClientShipperMatchesGovernorate($request, $data);
 
         $data = $this->resolveDefaultShipper($data);
         $data = $this->applyAutomaticFinancials($data);
@@ -161,30 +162,47 @@ class OrderController extends Controller
         $this->authorizeNotShipperCollected($order);
         $this->authorizeFinalStatusUpdate($request, $order);
 
-        $data = $request->validate([
-            'external_code' => ['sometimes', 'nullable', 'string'],
-            'receiver_name' => ['sometimes', 'required', 'string', 'max:255'],
-            'phone' => ['sometimes', 'required', 'string', 'max:30'],
-            'phone_2' => ['sometimes', 'nullable', 'string', 'max:30'],
-            'address' => ['sometimes', 'required', 'string'],
-            'governorate_id' => ['sometimes', 'required', 'exists:governorates,id'],
-            'city_id' => ['sometimes', 'required', 'exists:cities,id'],
-            'shipper_user_id' => ['sometimes', 'nullable', 'exists:users,id'],
-            'shipping_content_id' => ['sometimes', 'nullable', 'integer', 'exists:content,id'],
-            'total_amount' => ['sometimes', 'required', 'numeric', 'min:0'],
-            'status' => ['sometimes', 'required', Rule::in(['OUT_FOR_DELIVERY', 'DELIVERED', 'HOLD', 'UNDELIVERED'])],
-            'allow_open' => ['sometimes', 'boolean'],
-            'latest_status_note' => ['nullable', 'string'],
-            'order_note' => ['nullable', 'string'],
-        ]);
-
+        // $data = $request->validate([
+        //     'external_code' => ['sometimes', 'nullable', 'string'],
+        //     'receiver_name' => ['sometimes', 'required', 'string', 'max:255'],
+        //     'phone' => ['sometimes', 'required', 'string', 'max:30'],
+        //     'phone_2' => ['sometimes', 'nullable', 'string', 'max:30'],
+        //     'address' => ['sometimes', 'required', 'string'],
+        //     'governorate_id' => ['sometimes', 'required', 'exists:governorates,id'],
+        //     'city_id' => ['sometimes', 'required', 'exists:cities,id'],
+        //     'shipper_user_id' => ['sometimes', 'nullable', 'exists:users,id'],
+        //     'shipping_content_id' => ['sometimes', 'nullable', 'integer', 'exists:content,id'],
+        //     'total_amount' => ['sometimes', 'required', 'numeric', 'min:0'],
+        //     'status' => ['sometimes', 'required', Rule::in(['OUT_FOR_DELIVERY', 'DELIVERED', 'HOLD', 'UNDELIVERED'])],
+        //     'allow_open' => ['sometimes', 'boolean'],
+        //     'latest_status_note' => ['nullable', 'string'],
+        //     'order_note' => ['nullable', 'string'],
+        // ]);
+$data = $request->validate([
+    'external_code' => ['sometimes', 'nullable', 'string'],
+    'receiver_name' => ['sometimes', 'required', 'string', 'max:255'],
+    'phone' => ['sometimes', 'required', 'string', 'max:30'],
+    'phone_2' => ['sometimes', 'nullable', 'string', 'max:30'],
+    'address' => ['sometimes', 'required', 'string'],
+    'governorate_id' => ['sometimes', 'required', 'exists:governorates,id'],
+    'city_id' => ['sometimes', 'required', 'exists:cities,id'],
+    'shipper_user_id' => ['sometimes', 'nullable', 'exists:users,id'],
+    'shipping_content_id' => ['sometimes', 'nullable', 'integer', 'exists:content,id'],
+    'total_amount' => ['sometimes', 'required', 'numeric', 'min:0'],
+    'shipping_fee' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+    'commission_amount' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+    'status' => ['sometimes', 'required', Rule::in(['OUT_FOR_DELIVERY', 'DELIVERED', 'HOLD', 'UNDELIVERED'])],
+    'allow_open' => ['sometimes', 'boolean'],
+    'latest_status_note' => ['nullable', 'string'],
+    'order_note' => ['nullable', 'string'],
+]);
         $this->authorizeEditableColumns($request, array_keys($data));
 
         if (array_key_exists('shipper_user_id', $data)) {
             $this->authorizeShipperChangeAllowed($order);
         }
 
-        $this->authorizeClientShipperMatchesGovernorate($request, $data, $order);
+      //  $this->authorizeClientShipperMatchesGovernorate($request, $data, $order);
 
         $this->authorizeNoPriceEditOnFinalStatus($order, $data);
 
@@ -349,7 +367,7 @@ class OrderController extends Controller
         ];
 
         $payload = $this->resolveDefaultShipper($payload, $order);
-        $this->authorizeClientShipperMatchesGovernorate($request, $payload, $order);
+      //  $this->authorizeClientShipperMatchesGovernorate($request, $payload, $order);
         
         if (array_key_exists('shipper_date', $data) && $data['shipper_date']) {
             $payload['shipper_date'] = $data['shipper_date'];
@@ -477,7 +495,6 @@ class OrderController extends Controller
                 if (! $order instanceof Order) {
                     continue;
                 }
-
                 $this->authorizeNotShipperCollected($order);
                 $this->authorizeShipperChangeAllowed($order);
                 $this->authorizeFinalStatusUpdate(request(), $order);
@@ -487,7 +504,7 @@ class OrderController extends Controller
                 ];
 
                 $payload = $this->resolveDefaultShipper($payload, $order);
-                $this->authorizeClientShipperMatchesGovernorate(request(), $payload, $order);
+              //  $this->authorizeClientShipperMatchesGovernorate(request(), $payload, $order);
                 
                 if (array_key_exists('shipper_date', $data) && $data['shipper_date']) {
                     $payload['shipper_date'] = $data['shipper_date'];
@@ -605,6 +622,76 @@ class OrderController extends Controller
 
         return response()->json([
             'message' => 'Status updated successfully for selected orders.',
+            'updated_order_ids' => $updated,
+        ]);
+    }
+
+    public function bulkApprove(Request $request): JsonResponse
+    {
+        $this->authorizePermission($request, 'order.approve');
+
+        $data = $request->validate([
+            'order_ids' => ['required', 'array', 'min:1'],
+            'order_ids.*' => ['required', 'integer', 'exists:orders,id'],
+        ]);
+
+        $orders = Order::query()->forUserRole()->whereIn('id', $data['order_ids'])->get();
+
+        $updated = DB::transaction(function () use ($orders, $request): array {
+            $result = [];
+
+            foreach ($orders as $order) {
+                if (! $order instanceof Order) {
+                    continue;
+                }
+                
+                $this->markOrderApproved($request, $order);
+                $result[] = $order->id;
+            }
+
+            return $result;
+        });
+
+        return response()->json([
+            'message' => 'Status updated to APPROVED for selected orders.',
+            'updated_order_ids' => $updated,
+        ]);
+    }
+
+    public function bulkReject(Request $request): JsonResponse
+    {
+        $this->authorizePermission($request, 'order.reject');
+
+        $data = $request->validate([
+            'order_ids' => ['required', 'array', 'min:1'],
+            'order_ids.*' => ['required', 'integer', 'exists:orders,id'],
+            'approval_note' => ['nullable', 'string'],
+        ]);
+
+        $orders = Order::query()->forUserRole()->whereIn('id', $data['order_ids'])->get();
+
+        $updated = DB::transaction(function () use ($orders, $data, $request): array {
+            $result = [];
+
+            foreach ($orders as $order) {
+                if (! $order instanceof Order) {
+                    continue;
+                }
+
+                $order->update([
+                    'approval_status' => 'REJECTED',
+                    'rejected_at' => now(),
+                    'rejected_by' => $request->user()->id,
+                    'approval_note' => $data['approval_note'] ?? null,
+                ]);
+                $result[] = $order->id;
+            }
+
+            return $result;
+        });
+
+        return response()->json([
+            'message' => 'Status updated to REJECTED for selected orders.',
             'updated_order_ids' => $updated,
         ]);
     }
@@ -1026,8 +1113,10 @@ class OrderController extends Controller
             'approval_statuses' => ['nullable', 'array'],
             'governorate_id' => ['nullable', 'integer'],
             'city_id' => ['nullable', 'integer'],
-            'shipper_user_id' => ['nullable', 'integer'],
-            'client_user_id' => ['nullable', 'integer'],
+            // 'shipper_user_id' => ['nullable', 'integer'],
+            // 'client_user_id' => ['nullable', 'integer'],
+            'shipper_user_id' => ['nullable', 'string', 'max:255'],
+            'client_user_id' => ['nullable', 'string', 'max:255'],
             'allow_open' => ['nullable'],
             'collection_state' => ['nullable', 'string'],
             'is_shipper_collected' => ['nullable'],
@@ -1059,8 +1148,8 @@ class OrderController extends Controller
             'search.approval_status' => ['nullable', Rule::in(['PENDING', 'APPROVED', 'REJECTED'])],
             'search.governorate_id' => ['nullable', 'integer', 'exists:governorates,id'],
             'search.city_id' => ['nullable', 'integer', 'exists:cities,id'],
-            'search.shipper_user_id' => ['nullable', 'integer', 'exists:users,id'],
-            'search.client_user_id' => ['nullable', 'integer', 'exists:users,id'],
+            'search.shipper_user_id' => ['nullable', 'stting'],
+            'search.client_user_id' => ['nullable', 'string'],
             'search.allow_open' => ['nullable', 'boolean'],
             'search.collection_state' => ['nullable', Rule::in(['not_collected', 'ready_to_collect', 'collected'])],
             'search.is_shipper_collected' => ['nullable', 'boolean'],
@@ -1489,6 +1578,25 @@ class OrderController extends Controller
             $value = explode(',', $value);
         }
 
+            if ($filter === 'shipper_user_id' && is_string($value) && ! is_numeric($value)) {
+        $name = trim($value);
+
+        $query->whereHas('shipper', function (Builder $q) use ($name): void {
+            $q->where('name', 'like', '%'.$name.'%');
+        });
+
+        return;
+    }
+        if ($filter === 'client_user_id' && is_string($value) && ! is_numeric($value)) {
+        $name = trim($value);
+
+        $query->whereHas('client', function (Builder $q) use ($name): void {
+            $q->where('name', 'like', '%'.$name.'%');
+        });
+
+        return;
+    }
+
         if ($filter === 'code' && is_string($value)) {
             $like = '%'.$value.'%';
             $query->where(function (Builder $q) use ($like): void {
@@ -1724,33 +1832,33 @@ class OrderController extends Controller
         return $data;
     }
 
-    private function authorizeClientShipperMatchesGovernorate(Request $request, array $data, ?Order $order = null): void
-    {
-        $shipperUserId = $data['shipper_user_id'] ?? $order?->shipper_user_id;
-        if ($shipperUserId === null || $shipperUserId === '') {
-            return;
-        }
+    // private function authorizeClientShipperMatchesGovernorate(Request $request, array $data, ?Order $order = null): void
+    // {
+    //     $shipperUserId = $data['shipper_user_id'] ?? $order?->shipper_user_id;
+    //     if ($shipperUserId === null || $shipperUserId === '') {
+    //         return;
+    //     }
 
-        $governorateId = $data['governorate_id'] ?? $order?->governorate_id;
-        if ($governorateId === null) {
-            return;
-        }
+    //     $governorateId = $data['governorate_id'] ?? $order?->governorate_id;
+    //     if ($governorateId === null) {
+    //         return;
+    //     }
 
-        $defaultShipperUserId = Governorate::query()
-            ->whereKey($governorateId)
-            ->value('default_shipper_user_id');
+    //     $defaultShipperUserId = Governorate::query()
+    //         ->whereKey($governorateId)
+    //         ->value('default_shipper_user_id');
 
-        $isAssignedShipper = Governorate::query()
-            ->whereKey($governorateId)
-            ->whereHas('shippers', fn (Builder $query) => $query->where('users.id', $shipperUserId))
-            ->exists();
+    //     $isAssignedShipper = Governorate::query()
+    //         ->whereKey($governorateId)
+    //         ->whereHas('shippers', fn (Builder $query) => $query->where('users.id', $shipperUserId))
+    //         ->exists();
 
-        if ((int) $defaultShipperUserId !== (int) $shipperUserId && ! $isAssignedShipper) {
-            throw ValidationException::withMessages([
-                'shipper_user_id' => ['Selected shipper is not assigned to the selected governorate.'],
-            ]);
-        }
-    }
+    //     if ((int) $defaultShipperUserId !== (int) $shipperUserId && ! $isAssignedShipper) {
+    //         throw ValidationException::withMessages([
+    //             'shipper_user_id' => ['Selected shipper is not assigned to the selected governorate.'],
+    //         ]);
+    //     }
+    // }
 
     private function buildClientTimelineEntry($log): array
     {

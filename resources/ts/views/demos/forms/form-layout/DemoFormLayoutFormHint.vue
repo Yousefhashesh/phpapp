@@ -11,7 +11,7 @@ const values = ref<typeof items[number][]>([])
   <VForm @submit.prevent="() => {}">
     <VRow>
       <VCol cols="12">
-        <!-- 👉 Username -->
+        <!--    Username -->
         <AppTextField
           v-model="username"
           label="Username"
@@ -20,7 +20,7 @@ const values = ref<typeof items[number][]>([])
       </VCol>
 
       <VCol cols="12">
-        <!-- 👉 Email -->
+        <!--    Email -->
         <AppTextField
           v-model="email"
           label="Email"
@@ -30,7 +30,7 @@ const values = ref<typeof items[number][]>([])
       </VCol>
 
       <VCol cols="12">
-        <!-- 👉 Password -->
+        <!--    Password -->
         <AppTextField
           v-model="password"
           label="Password"
@@ -43,7 +43,7 @@ const values = ref<typeof items[number][]>([])
       </VCol>
 
       <VCol cols="12">
-        <!-- 👉 Autocomplete -->
+        <!--    Autocomplete -->
         <AppAutocomplete
           v-model="values"
           :items="items"
@@ -55,7 +55,7 @@ const values = ref<typeof items[number][]>([])
       </VCol>
 
       <VCol cols="12">
-        <!-- 👉 Checkbox -->
+        <!--    Checkbox -->
         <VCheckbox
           v-model="checkbox"
           label="Remember me"
@@ -66,7 +66,7 @@ const values = ref<typeof items[number][]>([])
         cols="12"
         class="d-flex gap-4"
       >
-        <!-- 👉 submit and reset button -->
+        <!--    submit and reset button -->
         <VBtn type="submit">
           Submit
         </VBtn>

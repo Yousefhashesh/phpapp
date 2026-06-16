@@ -154,7 +154,7 @@ const onSubmit = () => {
     min-height="590"
     @update:model-value="dialogVisibleUpdate"
   >
-    <!-- 👉 dialog close btn -->
+    <!--    dialog close btn -->
     <DialogCloseBtn
       size="small"
       @click="emit('update:isDialogVisible', false)"
@@ -164,7 +164,7 @@ const onSubmit = () => {
       min-height="590"
     >
       <VCardText class="pa-5 pa-sm-16">
-        <!-- 👉 Title -->
+        <!--    Title -->
         <h4 class="text-h4 text-center mb-2">
           Create App
         </h4>
@@ -198,7 +198,7 @@ const onSubmit = () => {
               v-model="currentStep"
               class="disable-tab-transition stepper-content"
             >
-              <!-- 👉 category -->
+              <!--    category -->
               <VWindowItem>
                 <AppTextField
                   label="Application Name"
@@ -246,7 +246,7 @@ const onSubmit = () => {
                 </VRadioGroup>
               </VWindowItem>
 
-              <!-- 👉 Frameworks -->
+              <!--    Frameworks -->
               <VWindowItem>
                 <h5 class="text-h5 mb-4">
                   Select Framework
@@ -287,7 +287,7 @@ const onSubmit = () => {
                 </VRadioGroup>
               </VWindowItem>
 
-              <!-- 👉 Database Engine -->
+              <!--    Database Engine -->
               <VWindowItem>
                 <AppTextField
                   label="Database Name"
@@ -333,7 +333,7 @@ const onSubmit = () => {
                 </VRadioGroup>
               </VWindowItem>
 
-              <!-- 👉 Billing form -->
+              <!--    Billing form -->
               <VWindowItem>
                 <h6 class="text-h6 mb-6">
                   Payment Details

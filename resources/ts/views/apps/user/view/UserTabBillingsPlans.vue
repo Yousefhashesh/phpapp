@@ -89,7 +89,7 @@ const currentBillingAddress = {
 
 <template>
   <VRow>
-    <!-- 👉 Current Plan -->
+    <!--    Current Plan -->
     <VCol cols="12">
       <VCard title="Current Plan">
         <VCardText>
@@ -135,7 +135,7 @@ const currentBillingAddress = {
               order-md="2"
               order="1"
             >
-              <!-- 👉 Alert -->
+              <!--    Alert -->
               <VAlert
                 color="warning"
                 variant="tonal"
@@ -148,7 +148,7 @@ const currentBillingAddress = {
                 </div>
               </VAlert>
 
-              <!-- 👉 Progress -->
+              <!--    Progress -->
               <div class="d-flex justify-space-between font-weight-bold mt-4 mb-2">
                 <h6 class="text-h6">
                   Days
@@ -191,7 +191,7 @@ const currentBillingAddress = {
       </VCard>
     </VCol>
 
-    <!-- 👉 Payment Methods -->
+    <!--    Payment Methods -->
     <VCol cols="12">
       <VCard title="Payment Methods">
         <template #append>
@@ -265,7 +265,7 @@ const currentBillingAddress = {
     </VCol>
 
     <VCol cols="12">
-      <!-- 👉 Billing Address -->
+      <!--    Billing Address -->
       <VCard title="Billing Address">
         <template #append>
           <VBtn
@@ -408,22 +408,22 @@ const currentBillingAddress = {
     </VCol>
   </VRow>
 
-  <!-- 👉 Edit Card Dialog -->
+  <!--    Edit Card Dialog -->
   <CardAddEditDialog
     v-model:is-dialog-visible="isCardEditDialogVisible"
     :card-details="currentCardDetails"
   />
 
-  <!-- 👉 Add Card Dialog -->
+  <!--    Add Card Dialog -->
   <CardAddEditDialog v-model:is-dialog-visible="isCardAddDialogVisible" />
 
-  <!-- 👉 Edit Address dialog -->
+  <!--    Edit Address dialog -->
   <AddEditAddressDialog
     v-model:is-dialog-visible="isEditAddressDialogVisible"
     :billing-address="currentBillingAddress"
   />
 
-  <!-- 👉 Upgrade plan dialog -->
+  <!--    Upgrade plan dialog -->
   <UserUpgradePlanDialog v-model:is-dialog-visible="isUpgradePlanDialogVisible" />
 </template>
 

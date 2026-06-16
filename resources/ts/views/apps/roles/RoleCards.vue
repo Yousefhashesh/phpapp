@@ -35,7 +35,7 @@ interface ApiRole {
   users?: any[]
 }
 
-// 👉 Roles List
+//    Roles List
 const roles = ref<ApiRole[]>([])
 const isLoading = ref(true)
 
@@ -91,7 +91,7 @@ const deleteRole = async (id: number) => {
 
 <template>
   <VRow v-if="!isLoading">
-    <!-- 👉 Roles -->
+    <!--    Roles -->
     <VCol
       v-for="item in roles"
       :key="item.id"
@@ -161,7 +161,7 @@ const deleteRole = async (id: number) => {
       </VCard>
     </VCol>
 
-    <!-- 👉 Add New Role -->
+    <!--    Add New Role -->
     <VCol
       v-if="can('role.create' as any, 'all' as any)"
       cols="12"

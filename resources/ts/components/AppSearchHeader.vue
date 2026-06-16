@@ -21,7 +21,7 @@ const props = withDefaults(defineProps<Props>(), {
 </script>
 
 <template>
-  <!-- 👉 Search Banner  -->
+  <!--    Search Banner  -->
   <VCard
     flat
     class="text-center search-header"
@@ -41,7 +41,7 @@ const props = withDefaults(defineProps<Props>(), {
         <p class="mb-0">
           {{ props.subtitle }}
         </p>
-        <!-- 👉 Search Input -->
+        <!--    Search Input -->
         <div>
           <AppTextField
             v-bind="$attrs"

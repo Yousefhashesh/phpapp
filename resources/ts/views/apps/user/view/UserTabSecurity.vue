@@ -123,7 +123,7 @@ const recentDevices = computed(() => {
 <template>
   <VRow>
     <VCol cols="12">
-      <!-- 👉 Change password -->
+      <!--    Change password -->
       <VCard title="Change Password">
         <VCardText>
           <VAlert
@@ -191,7 +191,7 @@ const recentDevices = computed(() => {
 
 
     <VCol cols="12">
-      <!-- 👉 Recent devices -->
+      <!--    Recent devices -->
 
       <VCard title="Recent devices">
         <VDivider />
@@ -249,7 +249,7 @@ const recentDevices = computed(() => {
     </VCol>
   </VRow>
 
-  <!-- 👉 Enable One Time Password Dialog -->
+  <!--    Enable One Time Password Dialog -->
   <TwoFactorAuthDialog
     v-model:is-dialog-visible="isTwoFactorDialogOpen"
     :sms-code="smsVerificationNumber"

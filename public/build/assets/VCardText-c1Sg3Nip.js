@@ -1,1 +1,0 @@
-import{aj as s,ci as r,a4 as o,bc as c,ba as n,bo as m,a$ as l,aJ as i}from"./main-CTLRPAhT.js";const p=m({opacity:[Number,String],...i(),...l()},"VCardText"),x=s()({name:"VCardText",props:p(),setup(a,e){let{slots:t}=e;return r(()=>o(a.tag,{class:n(["v-card-text",a.class]),style:c([{"--v-card-text-opacity":a.opacity},a.style])},t)),{}}});export{x as V};

@@ -4,7 +4,7 @@ import { useNotificationStore } from '@/stores/useNotificationStore';
 import { createUrl } from '@core/composable/createUrl';
 import { useI18n } from 'vue-i18n';
 
-// 👉 Props
+//    Props
 const props = defineProps<{
   shipperId?: number | string
   clientId?: number | string
@@ -17,6 +17,10 @@ const props = defineProps<{
 
 const { t } = useI18n()
 
+const importErrors = ref<string[]>([])
+const isImportErrorsModalVisible = ref(false)
+
+
 const isAddEditOrderModalVisible = ref(false)
 const isStatusModalVisible = ref(false)
 const isShipperModalVisible = ref(false)
@@ -28,7 +32,7 @@ const selectedOrderForDetails = ref<any>(null)
 const isDetailsModalVisible = ref(false)
 const pageMetadata = ref<any>({})
 
-// 👉 Load Items Per Page from localStorage
+//    Load Items Per Page from localStorage
 const ITEMS_PER_PAGE_STORAGE_KEY = 'orders-items-per-page'
 const loadItemsPerPageFromStorage = () => {
   const stored = localStorage.getItem(ITEMS_PER_PAGE_STORAGE_KEY)
@@ -110,7 +114,7 @@ const bulkPrintSmallLabels = () => {
   window.open(`/apps/orders/bulk-delivery-labels?ids=${ids}`, '_blank')
 }
 
-// 👉 Headers
+//    Headers
 const headers = [
   { title: t('CODE'), key: 'code', width: '160px' },
   { title: t('DATE ENTRY'), key: 'created_at', width: '100px' },
@@ -207,12 +211,12 @@ const filteredHeadersForMenu = computed(() => {
 
 const resolveRowItem = (item: any) => item?.raw ?? item
 
-// 👉 Filters State (Others)
+//    Filters State (Others)
 const selectedGovernorate = ref<number | null>(null)
 const selectedShipper = ref<number | null>(props.shipperId ? Number(props.shipperId) : null)
 const selectedClient = ref<number | null>(props.clientId ? Number(props.clientId) : null)
 
-// 👉 State Refs
+//    State Refs
 const selectedOrders = ref<any[]>([])
 const isBulkStatusModalVisible = ref(false)
 const isBulkShipperModalVisible = ref(false)
@@ -289,6 +293,41 @@ const downloadTemplate = () => {
   window.open(`/api/orders/import-template?token=${token}`, '_blank')
 }
 
+// const handleImport = async (event: Event) => {
+//   if (!isWithinWorkingHours('orders')) {
+//     const meta = pageMetadata.value?.working_hours
+//     const start = meta?.working_hours_orders_start || '08:00'
+//     const end = meta?.working_hours_orders_end || '22:00'
+//     alert(`لا يمكن الاستيراد الآن. مواعيد العمل الرسمية: من ${start} حتى ${end}`)
+//     return
+//   }
+//   const target = event.target as HTMLInputElement
+//   if (!target.files?.length) return
+
+//   const file = target.files[0]
+//   const formData = new FormData()
+//   formData.append('file', file)
+
+//   try {
+//     const { data, error } = await useApi('/orders/import').post(formData).json()
+//     if (!error.value) {
+//       notify(`Import Successful! ${data.value.success_count} orders created.`, 'success')
+//       if (data.value.errors?.length) {
+//          console.warn('Import Errors:', data.value.errors)
+//          notify('Some rows had errors. Check console for details.', 'warning')
+//       }
+//       fetchOrders()
+//     } else {
+//       notify('Import failed: ' + (error.value?.message || 'Check file format'), 'error')
+//     }
+//   } catch (e) {
+//     console.error(e)
+//     notify('Network error during import', 'error')
+//   }
+//   // Clear input
+//   target.value = ''
+// }
+
 const handleImport = async (event: Event) => {
   if (!isWithinWorkingHours('orders')) {
     const meta = pageMetadata.value?.working_hours
@@ -304,23 +343,38 @@ const handleImport = async (event: Event) => {
   const formData = new FormData()
   formData.append('file', file)
 
+  importErrors.value = []
+
   try {
     const { data, error } = await useApi('/orders/import').post(formData).json()
+
     if (!error.value) {
-      notify(`Import Successful! ${data.value.success_count} orders created.`, 'success')
-      if (data.value.errors?.length) {
-         console.warn('Import Errors:', data.value.errors)
-         notify('Some rows had errors. Check console for details.', 'warning')
+      const successCount = data.value.success_count ?? 0
+      const errors = data.value.errors || []
+
+      if (successCount > 0) {
+        notify(`تم استيراد ${successCount} أوردر بنجاح.`, 'success')
+        fetchOrders()
       }
-      fetchOrders()
+
+      if (errors.length) {
+        importErrors.value = errors
+        isImportErrorsModalVisible.value = true
+
+        if (successCount === 0) {
+          notify('لم يتم استيراد أي أوردر، يوجد أخطاء في الملف.', 'error')
+        } else {
+          notify(`فشلت ${errors.length} صف/صفوف من ضمن الملف.`, 'warning')
+        }
+      }
     } else {
-      notify('Import failed: ' + (error.value?.message || 'Check file format'), 'error')
+      notify('فشل الاستيراد: ' + (error.value?.message || 'تحقق من صيغة الملف'), 'error')
     }
   } catch (e) {
     console.error(e)
-    notify('Network error during import', 'error')
+    notify('حدث خطأ في الشبكة أثناء الاستيراد', 'error')
   }
-  // Clear input
+
   target.value = ''
 }
 
@@ -714,14 +768,14 @@ const sendToWhatsApp = (item: any) => {
   window.open(url, '_blank')
 }
 
-// 👉 Initial fetch
+//    Initial fetch
 searchShippers()
 searchClients()
 </script>
 
 <template>
   <section>
-    <!-- 👉 Stats Cards -->
+    <!--    Stats Cards -->
     <VRow class="mb-2">
       <VCol cols="6" md="2">
         <VCard elevation="2" class="stats-card"><VCardText class="d-flex align-center gap-3 pa-3">
@@ -833,7 +887,7 @@ searchClients()
             <VBtn v-if="can('order.export', 'all')" color="secondary" size="small" variant="tonal" prepend-icon="tabler-file-spreadsheet" @click="exportOrders">{{ t('Export All') }}</VBtn>
             <VBtn v-if="can('order.create', 'all')" color="primary" size="small" prepend-icon="tabler-plus" @click="handleNewOrder">{{ t('New Order') }}</VBtn>
 
-            <!-- 👉 Column Visibility Toggle -->
+            <!--    Column Visibility Toggle -->
             <VMenu :close-on-content-click="false">
               <template #activator="{ props }">
                 <VBtn icon size="small" variant="tonal" color="secondary" v-bind="props" class="ms-2">
@@ -867,7 +921,7 @@ searchClients()
         hide-default-footer
         loading-text="تحميل البيانات..."
       >
-        <!-- 👉 Header Filter Slots -->
+        <!--    Header Filter Slots -->
         <template #header.code="{ column }">
           <div class="header-filter">
             <span class="header-title">{{ column.title }}</span>
@@ -928,12 +982,12 @@ searchClients()
 
         <template #header.shipper="{ column }">
           <div class="header-filter"><span class="header-title">{{ column.title }}</span>
-            <VAutocomplete v-model="selectedShipper" :items="shippers" item-title="name" item-value="id" clearable density="compact" hide-details variant="outlined" class="filter-select-outlined" placeholder="المندوب" @update:search="searchShippers" />
+            <VTextField v-model="selectedShipper" :items="shippers" item-title="name" item-value="id" clearable density="compact" hide-details variant="outlined" class="filter-select-outlined" placeholder="المندوب" @update:search="searchShippers" />
           </div>
         </template>
         <template #header.client="{ column }">
           <div class="header-filter"><span class="header-title">{{ column.title }}</span>
-            <VAutocomplete v-model="selectedClient" :items="clients" item-title="name" item-value="id" clearable density="compact" hide-details variant="outlined" class="filter-select-outlined" placeholder="العميل" @update:search="searchClients" />
+            <VTextField v-model="selectedClient" :items="clients" item-title="name" item-value="id" clearable density="compact" hide-details variant="outlined" class="filter-select-outlined" placeholder="العميل" @update:search="searchClients" />
           </div>
         </template>
 
@@ -942,7 +996,7 @@ searchClients()
           <div class="header-filter justify-center"><span class="header-title">{{ column.title }}</span></div>
         </template>
 
-        <!-- 👉 Item Slots -->
+        <!--    Item Slots -->
         <template #item.code="{ item }: { item: any }">
           <div class="d-flex flex-column text-xs py-1">
             <span class="text-primary font-weight-bold" style="white-space: nowrap;">#{{ item.code }}</span>
@@ -1157,6 +1211,35 @@ searchClients()
       :order="selectedOrderForDetails"
       @print="id => printLabel(id)"
     />
+    <VDialog v-model="isImportErrorsModalVisible" max-width="700">
+  <VCard>
+    <VCardTitle class="d-flex align-center justify-space-between">
+      <span>أخطاء الاستيراد ({{ importErrors.length }})</span>
+      <IconBtn @click="isImportErrorsModalVisible = false">
+        <VIcon icon="tabler-x" />
+      </IconBtn>
+    </VCardTitle>
+    <VDivider />
+    <VCardText style="max-block-size: 60vh; overflow-y: auto;">
+      <VAlert
+        v-for="(err, idx) in importErrors"
+        :key="idx"
+        type="error"
+        variant="tonal"
+        density="compact"
+        class="mb-2 text-xs"
+      >
+        {{ err }}
+      </VAlert>
+    </VCardText>
+    <VCardActions>
+      <VSpacer />
+      <VBtn color="secondary" variant="tonal" @click="isImportErrorsModalVisible = false">
+        إغلاق
+      </VBtn>
+    </VCardActions>
+  </VCard>
+</VDialog>
   </section>
 </template>
 

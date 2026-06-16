@@ -4,7 +4,7 @@ import avatar1 from '@images/avatars/avatar-1.png'
 
 <template>
   <div class="demo-space-x">
-    <!-- 👉 Top End -->
+    <!--    Top End -->
     <VBadge
       content="1"
       location="end top"
@@ -14,7 +14,7 @@ import avatar1 from '@images/avatars/avatar-1.png'
       </VAvatar>
     </VBadge>
 
-    <!-- 👉 Bottom Start -->
+    <!--    Bottom Start -->
     <VBadge
       location="bottom start"
       content="2"
@@ -24,7 +24,7 @@ import avatar1 from '@images/avatars/avatar-1.png'
       </VAvatar>
     </VBadge>
 
-    <!-- 👉 Bottom End -->
+    <!--    Bottom End -->
     <VBadge
       location="bottom end"
       content="3"
@@ -34,7 +34,7 @@ import avatar1 from '@images/avatars/avatar-1.png'
       </VAvatar>
     </VBadge>
 
-    <!-- 👉 top Start -->
+    <!--    top Start -->
     <VBadge
       location="top start"
       content="4"

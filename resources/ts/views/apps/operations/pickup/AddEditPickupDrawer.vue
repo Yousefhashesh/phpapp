@@ -31,7 +31,7 @@ const status = ref('PENDING')
 const approvalStatus = ref('PENDING')
 const notes = ref('')
 
-// 👉 Fetching Data for selects
+//    Fetching Data for selects
 const { data: clientsData } = await useApi<any>('/users?role=client')
 const clients = computed(() => clientsData.value?.data || [])
 
@@ -119,7 +119,7 @@ const handleDrawerModelValueUpdate = (val: boolean) => {
     :model-value="props.isDrawerOpen"
     @update:model-value="handleDrawerModelValueUpdate"
   >
-    <!-- 👉 Header -->
+    <!--    Header -->
     <AppDrawerHeaderSection
       :title="id ? 'Update Pickup Request' : 'Add Pickup Request'"
       @cancel="closeNavigationDrawer"
@@ -130,7 +130,7 @@ const handleDrawerModelValueUpdate = (val: boolean) => {
     <PerfectScrollbar :options="{ wheelPropagation: false }">
       <VCard flat>
         <VCardText>
-          <!-- 👉 Form -->
+          <!--    Form -->
           <VForm
             ref="refForm"
             v-model="isFormValid"

@@ -42,7 +42,7 @@ const orderData = ref<any>({
   order_note: '',
 })
 
-// 👉 Computed Financials
+//    Computed Financials
 const codAmount = computed(() => {
   return (Number(orderData.value.total_amount || 0) - Number(orderData.value.shipping_fee || 0)).toFixed(2)
 })
@@ -51,7 +51,7 @@ const netAmount = computed(() => {
   return (Number(orderData.value.shipping_fee || 0) - Number(orderData.value.commission_amount || 0)).toFixed(2)
 })
 
-// 👉 Fetch Options
+//    Fetch Options
 const governorates = ref<any[]>([])
 const shippers = ref<any[]>([])
 const clients = ref<any[]>([])
@@ -127,13 +127,21 @@ const filteredShippers = computed(() => {
     assignedShipperIds.push(Number(defaultShipperId))
   }
 
+  // Keep the order's currently assigned shipper visible even if they're
+  // not in this governorate's assigned list (e.g. assigned via the
+  // "change shipper" dialog without the governorate restriction).
+  const currentShipperId = orderData.value.shipper_user_id
+  if (currentShipperId && !assignedShipperIds.includes(Number(currentShipperId))) {
+    assignedShipperIds.push(Number(currentShipperId))
+  }
+
   if (!assignedShipperIds.length)
     return []
 
   return shippers.value.filter((shipper: any) => assignedShipperIds.includes(Number(shipper.id)))
 })
 
-// 👉 Auto-fill logic based on Client/Gov/Shipper selection
+//    Auto-fill logic based on Client/Gov/Shipper selection
 watch([() => orderData.value.client_user_id, () => orderData.value.governorate_id], ([newClient, newGov]) => {
   if (props.orderId) return
 
@@ -213,6 +221,7 @@ const onFormSubmit = async () => {
   const url = props.orderId ? `/orders/${props.orderId}` : '/orders'
 
   const payload = { ...orderData.value }
+
   if (isClientUser.value) {
     payload.client_user_id = userData.value?.id ?? payload.client_user_id
     if (!props.orderId)
@@ -334,7 +343,7 @@ const closeDialog = () => {
             <VCol cols="12">
                 <span class="text-overline mb-2 d-block">{{ t('Financial Details') }}</span>
             </VCol>
-            
+
             <VCol cols="12" md="4">
               <AppTextField v-model="orderData.total_amount" :label="t('TOTAL AMOUNT')" type="number" required :rules="[(v: any) => !!v || t('Required')]" />
             </VCol>
@@ -352,7 +361,6 @@ const closeDialog = () => {
               <AppTextField :model-value="netAmount" :label="t('NET (Company Revenue)')" disabled prefix="EGP" bg-color="info-lighten-5" />
             </VCol>
           </VRow>
-
           <VCardActions class="px-0 pt-6">
             <VSpacer />
             <VBtn color="secondary" variant="tonal" @click="closeDialog">{{ t('Cancel') }}</VBtn>

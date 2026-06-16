@@ -1,6 +1,6 @@
 import { isEmpty, isEmptyArray, isNullOrUndefined } from './helpers'
 
-// 👉 Required Validator
+//    Required Validator
 export const requiredValidator = (value: unknown) => {
   if (isNullOrUndefined(value) || isEmptyArray(value) || value === false)
     return 'This field is required'
@@ -8,7 +8,7 @@ export const requiredValidator = (value: unknown) => {
   return !!String(value).trim().length || 'This field is required'
 }
 
-// 👉 Email Validator
+//    Email Validator
 export const emailValidator = (value: unknown) => {
   if (isEmpty(value))
     return true
@@ -21,7 +21,7 @@ export const emailValidator = (value: unknown) => {
   return re.test(String(value)) || 'The Email field must be a valid email'
 }
 
-// 👉 Password Validator
+//    Password Validator
 export const passwordValidator = (password: string) => {
   const regExp = /(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%&*()]).{8,}/
 
@@ -30,19 +30,19 @@ export const passwordValidator = (password: string) => {
   return validPassword || 'Field must contain at least one uppercase, lowercase, special character and digit with min 8 chars'
 }
 
-// 👉 Confirm Password Validator
+//    Confirm Password Validator
 export const confirmedValidator = (value: string, target: string) =>
 
   value === target || 'The Confirm Password field confirmation does not match'
 
-// 👉 Between Validator
+//    Between Validator
 export const betweenValidator = (value: unknown, min: number, max: number) => {
   const valueAsNumber = Number(value)
 
   return (Number(min) <= valueAsNumber && Number(max) >= valueAsNumber) || `Enter number between ${min} and ${max}`
 }
 
-// 👉 Integer Validator
+//    Integer Validator
 export const integerValidator = (value: unknown) => {
   if (isEmpty(value))
     return true
@@ -53,7 +53,7 @@ export const integerValidator = (value: unknown) => {
   return /^-?\d+$/.test(String(value)) || 'This field must be an integer'
 }
 
-// 👉 Regex Validator
+//    Regex Validator
 export const regexValidator = (value: unknown, regex: RegExp | string): string | boolean => {
   if (isEmpty(value))
     return true
@@ -68,7 +68,7 @@ export const regexValidator = (value: unknown, regex: RegExp | string): string |
   return regeX.test(String(value)) || 'The Regex field format is invalid'
 }
 
-// 👉 Alpha Validator
+//    Alpha Validator
 export const alphaValidator = (value: unknown) => {
   if (isEmpty(value))
     return true
@@ -76,7 +76,7 @@ export const alphaValidator = (value: unknown) => {
   return /^[A-Z]*$/i.test(String(value)) || 'The Alpha field may only contain alphabetic characters'
 }
 
-// 👉 URL Validator
+//    URL Validator
 export const urlValidator = (value: unknown) => {
   if (isEmpty(value))
     return true
@@ -86,7 +86,7 @@ export const urlValidator = (value: unknown) => {
   return re.test(String(value)) || 'URL is invalid'
 }
 
-// 👉 Length Validator
+//    Length Validator
 export const lengthValidator = (value: unknown, length: number) => {
   if (isEmpty(value))
     return true
@@ -94,7 +94,7 @@ export const lengthValidator = (value: unknown, length: number) => {
   return String(value).length === length || `"The length of the Characters field must be ${length} characters."`
 }
 
-// 👉 Alpha-dash Validator
+//    Alpha-dash Validator
 export const alphaDashValidator = (value: unknown) => {
   if (isEmpty(value))
     return true

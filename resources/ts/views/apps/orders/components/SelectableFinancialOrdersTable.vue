@@ -60,6 +60,8 @@ const headers = [
     class="text-no-wrap border rounded selectable-financial-table"
     fixed-header
     :style="{ maxBlockSize: maxHeight }"
+    :items-per-page="-1"
+    hide-default-footer
   >
     <template #item.id="{ item }">
       <span class="font-weight-bold">#{{ item.id }}</span>

@@ -31,28 +31,28 @@ const planId = ref<number>()
 const shippingContentId = ref<number>()
 const canSettleBeforeShipperCollected = ref(false)
 
-// 👉 Fetching roles for selection
+//    Fetching roles for selection
 const { data: rolesData } = await useApi<any>('/roles')
 const roles = computed(() => {
   const rawRoles = rolesData.value?.data || rolesData.value || []
   return rawRoles.map((r: any) => ({ title: r.label || r.name, value: r.name }))
 })
 
-// 👉 Fetching plans for selection
+//    Fetching plans for selection
 const { data: plansData } = await useApi<any>('/plans')
 const plans = computed(() => {
   const rawPlans = plansData.value?.data || plansData.value || []
   return rawPlans.map((p: any) => ({ title: p.name, value: p.id }))
 })
 
-// 👉 Fetching shipping contents for selection
+//    Fetching shipping contents for selection
 const { data: contentsData } = await useApi<any>('/contents')
 const contents = computed(() => {
   const rawContents = contentsData.value?.data || contentsData.value || []
   return rawContents.map((c: any) => ({ title: c.name, value: c.id }))
 })
 
-// 👉 drawer close
+//    drawer close
 const closeNavigationDrawer = () => {
   emit('update:isDrawerOpen', false)
 
@@ -103,7 +103,7 @@ const handleDrawerModelValueUpdate = (val: boolean) => {
     :model-value="props.isDrawerOpen"
     @update:model-value="handleDrawerModelValueUpdate"
   >
-    <!-- 👉 Title -->
+    <!--    Title -->
     <AppDrawerHeaderSection
       title="Add New User"
       @cancel="closeNavigationDrawer"
@@ -114,14 +114,14 @@ const handleDrawerModelValueUpdate = (val: boolean) => {
     <PerfectScrollbar :options="{ wheelPropagation: false }">
       <VCard flat>
         <VCardText>
-          <!-- 👉 Form -->
+          <!--    Form -->
           <VForm
             ref="refForm"
             v-model="isFormValid"
             @submit.prevent="onSubmit"
           >
             <VRow>
-              <!-- 👉 name -->
+              <!--    name -->
                <VCol cols="12">
                 <AppTextField
                   v-model="name"
@@ -131,7 +131,7 @@ const handleDrawerModelValueUpdate = (val: boolean) => {
                 />
               </VCol>
 
-              <!-- 👉 Username -->
+              <!--    Username -->
               <VCol cols="12">
                 <AppTextField
                   v-model="username"
@@ -141,7 +141,7 @@ const handleDrawerModelValueUpdate = (val: boolean) => {
                 />
               </VCol>
 
-              <!-- 👉 Password -->
+              <!--    Password -->
               <VCol cols="12">
                 <AppTextField
                   v-model="password"
@@ -152,7 +152,7 @@ const handleDrawerModelValueUpdate = (val: boolean) => {
                 />
               </VCol>
 
-              <!-- 👉 Phone -->
+              <!--    Phone -->
               <VCol cols="12">
                 <AppTextField
                   v-model="phone"
@@ -161,7 +161,7 @@ const handleDrawerModelValueUpdate = (val: boolean) => {
                 />
               </VCol>
 
-              <!-- 👉 Role -->
+              <!--    Role -->
               <VCol cols="12">
                 <AppSelect
                   v-model="selectedRoles"
@@ -174,7 +174,7 @@ const handleDrawerModelValueUpdate = (val: boolean) => {
                 />
               </VCol>
 
-              <!-- 👉 Account Type -->
+              <!--    Account Type -->
               <VCol cols="12">
                 <AppSelect
                   v-model="accountType"
@@ -188,49 +188,54 @@ const handleDrawerModelValueUpdate = (val: boolean) => {
                 />
               </VCol>
 
-              <!-- 👉 Commission Rate (Shipper) -->
+              <!--    Commission Rate (Shipper) -->
               <VCol v-if="accountType === '2'" cols="12">
                 <AppTextField
                   v-model="commissionRate"
                   type="number"
+                   :rules="[requiredValidator]"
                   label="Commission Rate"
                   placeholder="10.00"
                 />
               </VCol>
 
-              <!-- 👉 Address (Client) -->
+              <!--    Address (Client) -->
               <VCol v-if="accountType === '1'" cols="12">
                 <AppTextField
                   v-model="address"
                   label="Address"
+                   :rules="[requiredValidator]"
                   placeholder="Client Address"
                 />
               </VCol>
 
-              <!-- 👉 Plan (Client) -->
+              <!--    Plan (Client) -->
               <VCol v-if="accountType === '1'" cols="12">
                 <AppSelect
                   v-model="planId"
                   label="Select Plan"
+                   :rules="[requiredValidator]"
                   placeholder="Select Plan"
                   :items="plans"
                 />
               </VCol>
 
-              <!-- 👉 Shipping Content (Client) -->
+              <!--    Shipping Content (Client) -->
               <VCol v-if="accountType === '1'" cols="12">
                 <AppSelect
                   v-model="shippingContentId"
                   label="Shipping Content"
+                   :rules="[requiredValidator]"
                   placeholder="Select Content"
                   :items="contents"
                 />
               </VCol>
-              <VCol v-if="accountType === '1'" cols="12">
+              <VCol v-if="accountType === '1'" cols="12"
+               :rules="[requiredValidator]">
                 <VSwitch v-model="canSettleBeforeShipperCollected" label="Can Settle Before Shipper Collected" color="success" />
               </VCol>
 
-              <!-- 👉 Is Blocked -->
+              <!--    Is Blocked -->
               <VCol cols="12">
                 <VSwitch
                   v-model="isBlocked"
@@ -239,7 +244,7 @@ const handleDrawerModelValueUpdate = (val: boolean) => {
                 />
               </VCol>
 
-              <!-- 👉 Submit and Cancel -->
+              <!--    Submit and Cancel -->
               <VCol cols="12">
                 <VBtn
                   type="submit"

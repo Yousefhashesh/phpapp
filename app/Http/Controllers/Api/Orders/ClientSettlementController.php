@@ -159,7 +159,7 @@ class ClientSettlementController extends Controller
 
         $validated = $request->validate([
             'client_user_id' => ['nullable', 'exists:users,id'],
-            'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:1000000'],
             'respect_shipper_collection_requirement' => ['nullable', 'boolean'],
             'q' => ['nullable', 'string', 'max:255'],
             'search' => ['nullable', 'array'],
@@ -177,7 +177,7 @@ class ClientSettlementController extends Controller
             ? (bool) $validated['respect_shipper_collection_requirement']
             : $settingsRequireShipperCollectionFirst;
 
-        $perPage = (int) ($validated['per_page'] ?? 100);
+        $perPage = (int) ($validated['per_page'] ?? 1000000);
 
         $orders = Order::query()
             ->forUserRole()

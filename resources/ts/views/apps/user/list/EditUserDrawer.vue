@@ -34,7 +34,7 @@ const planId = ref<number>()
 const shippingContentId = ref<number>()
 const canSettleBeforeShipperCollected = ref(false)
 
-// 👉 Fetching lists
+//    Fetching lists
 const { data: rolesData } = await useApi<any>('/roles')
 const roles = computed(() => (rolesData.value?.data || rolesData.value || []).map((r: any) => ({ title: r.label || r.name, value: r.name })))
 
@@ -44,7 +44,7 @@ const plans = computed(() => (plansData.value?.data || plansData.value || []).ma
 const { data: contentsData } = await useApi<any>('/contents')
 const contents = computed(() => (contentsData.value?.data || contentsData.value || []).map((c: any) => ({ title: c.name, value: c.id })))
 
-// 👉 Watch props.user and update form
+//    Watch props.user and update form
 watch(() => props.isDrawerOpen, (isOpen) => {
   if (isOpen && props.user) {
     id.value = props.user.id
@@ -142,6 +142,7 @@ const handleDrawerModelValueUpdate = (val: boolean) => {
                 <AppSelect
                   v-model="selectedRoles"
                   label="Roles"
+                  :rules="[requiredValidator]"
                   :items="roles"
                   multiple
                   chips
@@ -158,24 +159,25 @@ const handleDrawerModelValueUpdate = (val: boolean) => {
                     { title: 'Client', value: '1' },
                     { title: 'Shipper', value: '2' },
                   ]"
+:rules="[requiredValidator]"
                 />
               </VCol>
 
               <!-- Shipper Data -->
-              <VCol v-if="accountType === '2'" cols="12">
-                <AppTextField v-model="commissionRate" type="number" label="Commission Rate (%)" />
+              <VCol v-if="accountType === '2'" cols="12" >
+                <AppTextField v-model="commissionRate" type="number" label="Commission Rate (%)" :rules="[requiredValidator]"/>
               </VCol>
 
               <!-- Client Data -->
               <template v-if="accountType === '1'">
                 <VCol cols="12">
-                  <AppTextField v-model="address" label="Address" />
+                  <AppTextField v-model="address" label="Address" :rules="[requiredValidator]"/>
                 </VCol>
                 <VCol cols="12">
-                  <AppSelect v-model="planId" label="Plan" :items="plans" />
+                  <AppSelect v-model="planId" label="Plan" :items="plans" :rules="[requiredValidator]"/>
                 </VCol>
                 <VCol cols="12">
-                  <AppSelect v-model="shippingContentId" label="Shipping Content" :items="contents" />
+                  <AppSelect v-model="shippingContentId" label="Shipping Content" :items="contents" :rules="[requiredValidator]"/>
                 </VCol>
                 <VCol cols="12">
                   <VSwitch v-model="canSettleBeforeShipperCollected" label="Can Settle Before Shipper Collected" color="success" />

@@ -12,7 +12,7 @@ $header: ".layout-navbar";
 
 .layout-wrapper.layout-nav-type-vertical {
   // SECTION  Layout Navbar
-  // 👉 Elevated navbar
+  //    Elevated navbar
   @if variables.$vertical-nav-navbar-style == "elevated" {
     // Add transition
     #{$header} {
@@ -46,7 +46,7 @@ $header: ".layout-navbar";
     }
   }
 
-  // 👉 Floating navbar
+  //    Floating navbar
   @else if  variables.$vertical-nav-navbar-style == "floating" {
     // ℹ️ Regardless of navbar is contained or not => Apply overlay to .layout-navbar
     .layout-navbar {
@@ -78,7 +78,7 @@ $header: ".layout-navbar";
 
   // !SECTION
 
-  // 👉 Layout footer
+  //    Layout footer
   .layout-footer {
     $ele-layout-footer: &;
 

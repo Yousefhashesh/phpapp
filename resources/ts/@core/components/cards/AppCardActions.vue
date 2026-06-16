@@ -79,20 +79,20 @@ const triggeredRemove = () => {
       <VCard v-bind="$attrs">
         <VCardItem>
           <VCardTitle v-if="props.title || $slots.title">
-            <!-- 👉 Title slot and prop -->
+            <!--    Title slot and prop -->
             <slot name="title">
               {{ props.title }}
             </slot>
           </VCardTitle>
 
           <template #append>
-            <!-- 👉 Before actions slot -->
+            <!--    Before actions slot -->
             <div>
               <slot name="before-actions" />
 
               <!-- SECTION Actions buttons -->
 
-              <!-- 👉 Collapse button -->
+              <!--    Collapse button -->
               <IconBtn
                 v-if="(!(actionRemove || actionRefresh) || actionCollapsed) && !noActions"
                 @click="triggerCollapse"
@@ -105,7 +105,7 @@ const triggeredRemove = () => {
                 />
               </IconBtn>
 
-              <!-- 👉 Overlay button -->
+              <!--    Overlay button -->
               <IconBtn
                 v-if="(!(actionRemove || actionCollapsed) || actionRefresh) && !noActions"
                 @click="triggerRefresh"
@@ -116,7 +116,7 @@ const triggeredRemove = () => {
                 />
               </IconBtn>
 
-              <!-- 👉 Close button -->
+              <!--    Close button -->
               <IconBtn
                 v-if="(!(actionRefresh || actionCollapsed) || actionRemove) && !noActions"
                 @click="triggeredRemove"
@@ -131,7 +131,7 @@ const triggeredRemove = () => {
           </template>
         </VCardItem>
 
-        <!-- 👉 card content -->
+        <!--    card content -->
         <VExpandTransition>
           <div
             v-show="!isContentCollapsed"
@@ -141,7 +141,7 @@ const triggeredRemove = () => {
           </div>
         </VExpandTransition>
 
-        <!-- 👉 Overlay -->
+        <!--    Overlay -->
         <VOverlay
           v-model="$loading"
           contained

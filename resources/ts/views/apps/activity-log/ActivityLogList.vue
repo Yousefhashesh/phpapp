@@ -7,7 +7,7 @@ const searchQuery = ref('')
 const itemsPerPage = ref(25)
 const page = ref(1)
 
-// 👉 Fetching activity logs
+//    Fetching activity logs
 const { data: logsData, execute: fetchLogs } = await useApi<any>(createUrl('/activity-logs', {
   query: {
     q: searchQuery,

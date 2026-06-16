@@ -147,10 +147,10 @@ class ShipperCollectionController extends Controller
 
         $validated = $request->validate([
             'shipper_user_id' => ['nullable', 'exists:users,id'],
-            'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:1000000'],
         ]);
 
-        $perPage = (int) ($validated['per_page'] ?? 100);
+        $perPage = (int) ($validated['per_page'] ?? 1000000);
 
         $orders = Order::query()
             ->forUserRole()

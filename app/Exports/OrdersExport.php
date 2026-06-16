@@ -92,11 +92,6 @@ class OrdersExport implements FromQuery, WithHeadings, WithMapping, WithStyles, 
             $order->city?->name,
             $order->address,
             $order->total_amount,
-            $order->shipping_fee,
-            $order->cod_amount,
-            $order->shipper?->name,
-            $order->status,
-            $order->created_at->format('Y-m-d H:i'),
             $order->order_note,
         ];
     }

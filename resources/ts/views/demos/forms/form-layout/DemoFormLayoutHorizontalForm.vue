@@ -11,7 +11,7 @@ const checkbox = ref(false)
     <VRow>
       <VCol cols="12">
         <VRow no-gutters>
-          <!-- 👉 First Name -->
+          <!--    First Name -->
           <VCol
             cols="12"
             md="3"
@@ -39,7 +39,7 @@ const checkbox = ref(false)
 
       <VCol cols="12">
         <VRow no-gutters>
-          <!-- 👉 Email -->
+          <!--    Email -->
           <VCol
             cols="12"
             md="3"
@@ -67,7 +67,7 @@ const checkbox = ref(false)
 
       <VCol cols="12">
         <VRow no-gutters>
-          <!-- 👉 Mobile -->
+          <!--    Mobile -->
           <VCol
             cols="12"
             md="3"
@@ -96,7 +96,7 @@ const checkbox = ref(false)
 
       <VCol cols="12">
         <VRow no-gutters>
-          <!-- 👉 Password -->
+          <!--    Password -->
           <VCol
             cols="12"
             md="3"
@@ -124,7 +124,7 @@ const checkbox = ref(false)
         </VRow>
       </VCol>
 
-      <!-- 👉 Remember me -->
+      <!--    Remember me -->
       <VCol cols="12">
         <VRow no-gutters>
           <VCol
@@ -143,7 +143,7 @@ const checkbox = ref(false)
         </VRow>
       </VCol>
 
-      <!-- 👉 submit and reset button -->
+      <!--    submit and reset button -->
       <VCol cols="12">
         <VRow no-gutters>
           <VCol

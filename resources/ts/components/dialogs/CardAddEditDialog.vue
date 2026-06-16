@@ -55,7 +55,7 @@ const dialogModelValueUpdate = (val: boolean) => {
     <DialogCloseBtn @click="dialogModelValueUpdate(false)" />
 
     <VCard class="pa-2 pa-sm-10">
-      <!-- 👉 Title -->
+      <!--    Title -->
       <VCardItem class="text-center">
         <VCardTitle>
           <h4 class="text-h4 mb-2">
@@ -70,7 +70,7 @@ const dialogModelValueUpdate = (val: boolean) => {
       <VCardText class="pt-6">
         <VForm @submit.prevent="() => {}">
           <VRow>
-            <!-- 👉 Card Number -->
+            <!--    Card Number -->
             <VCol cols="12">
               <AppTextField
                 v-model="cardDetails.number"
@@ -80,7 +80,7 @@ const dialogModelValueUpdate = (val: boolean) => {
               />
             </VCol>
 
-            <!-- 👉 Card Name -->
+            <!--    Card Name -->
             <VCol
               cols="12"
               md="6"
@@ -92,7 +92,7 @@ const dialogModelValueUpdate = (val: boolean) => {
               />
             </VCol>
 
-            <!-- 👉 Card Expiry -->
+            <!--    Card Expiry -->
             <VCol
               cols="12"
               md="3"
@@ -104,7 +104,7 @@ const dialogModelValueUpdate = (val: boolean) => {
               />
             </VCol>
 
-            <!-- 👉 Card CVV -->
+            <!--    Card CVV -->
             <VCol
               cols="12"
               md="3"
@@ -117,7 +117,7 @@ const dialogModelValueUpdate = (val: boolean) => {
               />
             </VCol>
 
-            <!-- 👉 Card Primary Set -->
+            <!--    Card Primary Set -->
             <VCol cols="12">
               <VSwitch
                 v-model="cardDetails.isPrimary"
@@ -125,7 +125,7 @@ const dialogModelValueUpdate = (val: boolean) => {
               />
             </VCol>
 
-            <!-- 👉 Card actions -->
+            <!--    Card actions -->
             <VCol
               cols="12"
               class="text-center"

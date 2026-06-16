@@ -100,6 +100,7 @@ class Setting extends Model
                 'whatsapp_group_id' => '',
                 'whatsapp_replace_order_notifications' => 'yes',
                 'whatsapp_service_url' => 'http://127.0.0.1:3001',
+                'whatsapp_group_client_mapping' => '[]',
             ],
         ];
     }

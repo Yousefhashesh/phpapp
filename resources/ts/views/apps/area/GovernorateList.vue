@@ -53,7 +53,7 @@ watch(visibleHeaderKeys, (newVal) => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(newVal))
 })
 
-// 👉 Fetching Governorates
+//    Fetching Governorates
 const { data: governoratesData, execute: fetchGovernorates } = await useApi<any>(createUrl('/governorates', {
   query: {
     q: searchQuery,
@@ -107,7 +107,7 @@ const handleFormSubmit = () => {
             Add Area
           </VBtn>
 
-          <!-- 👉 Column Visibility Toggle -->
+          <!--    Column Visibility Toggle -->
           <VMenu :close-on-content-click="false">
             <template #activator="{ props }">
               <VBtn icon variant="tonal" color="secondary" v-bind="props">

@@ -33,7 +33,7 @@ class OrdersTemplateSheet implements
     public function headings(): array
     {
         return [
-            'كود',           // A - سيتم توليده تلقائياً
+            'كود',           // A - 
             'كود الشركة',    // B
             'id Client',    // C - Dropdown
             'Name',         // D
@@ -44,13 +44,14 @@ class OrdersTemplateSheet implements
             'Address',       // I
             'السعر',         // J
             'الحالة',        // K - OUT_FOR_DELIVERY / DELIVERED
-            'الملحوظة',      // L
+            'ملحوظة الحالة', // L
+            'الملحوظة',      // M
         ];
     }
 
     public function array(): array
     {
-        // 100 صف فارغ للإدخال
+        
         $rows = [];
         
         for ($i = 0; $i < 100; $i++) {

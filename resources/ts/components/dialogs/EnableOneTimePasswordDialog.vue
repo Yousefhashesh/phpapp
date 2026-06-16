@@ -40,7 +40,7 @@ const dialogModelValueUpdate = (val: boolean) => {
 
     <VCard class="pa-2 pa-sm-10">
       <VCardText>
-        <!-- 👉 Title -->
+        <!--    Title -->
         <h5 class="text-h5 mb-2">
           Verify Your Mobile Number for SMS
         </h5>

@@ -17,7 +17,7 @@ import { VNodeRenderer } from '@layouts/components/VNodeRenderer'
 
 <template>
   <HorizontalNavLayout :nav-items="navItems">
-    <!-- 👉 navbar -->
+    <!--    navbar -->
     <template #navbar>
       <RouterLink
         to="/"
@@ -44,15 +44,15 @@ import { VNodeRenderer } from '@layouts/components/VNodeRenderer'
       <UserProfile />
     </template>
 
-    <!-- 👉 Pages -->
+    <!--    Pages -->
     <slot />
 
-    <!-- 👉 Footer -->
+    <!--    Footer -->
     <template #footer>
       <Footer />
     </template>
 
-    <!-- 👉 Customizer -->
+    <!--    Customizer -->
     <!-- <TheCustomizer /> -->
   </HorizontalNavLayout>
 </template>

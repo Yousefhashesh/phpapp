@@ -28,7 +28,7 @@ const pickupRequestId = ref<number | null>(null)
 const materialRequestId = ref<number | null>(null)
 const visitCost = ref(0)
 
-// 👉 Fetching Data
+//    Fetching Data
 const { data: shippersData } = await useApi<any>('/users?role=shipper')
 const shippers = computed(() => shippersData.value?.data || [])
 
@@ -113,7 +113,7 @@ const handleDrawerModelValueUpdate = (val: boolean) => {
     :model-value="props.isDrawerOpen"
     @update:model-value="handleDrawerModelValueUpdate"
   >
-    <!-- 👉 Header -->
+    <!--    Header -->
     <AppDrawerHeaderSection
       :title="id ? 'Update Visit' : 'Add Visit'"
       @cancel="closeNavigationDrawer"
@@ -124,7 +124,7 @@ const handleDrawerModelValueUpdate = (val: boolean) => {
     <PerfectScrollbar :options="{ wheelPropagation: false }">
       <VCard flat>
         <VCardText>
-          <!-- 👉 Form -->
+          <!--    Form -->
           <VForm
             ref="refForm"
             v-model="isFormValid"

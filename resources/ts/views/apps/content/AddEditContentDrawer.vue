@@ -84,7 +84,7 @@ const handleDrawerModelValueUpdate = (val: boolean) => {
     :model-value="props.isDrawerOpen"
     @update:model-value="handleDrawerModelValueUpdate"
   >
-    <!-- 👉 Header -->
+    <!--    Header -->
     <AppDrawerHeaderSection
       :title="id ? 'Update Content' : 'Add Content'"
       @cancel="closeNavigationDrawer"
@@ -95,7 +95,7 @@ const handleDrawerModelValueUpdate = (val: boolean) => {
     <PerfectScrollbar :options="{ wheelPropagation: false }">
       <VCard flat>
         <VCardText>
-          <!-- 👉 Form -->
+          <!--    Form -->
           <VForm
             ref="refForm"
             v-model="isFormValid"

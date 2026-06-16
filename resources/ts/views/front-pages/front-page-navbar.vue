@@ -42,7 +42,7 @@ watch(() => display, () => {
 </script>
 
 <template>
-  <!-- 👉 Navigation drawer for mobile devices  -->
+  <!--    Navigation drawer for mobile devices  -->
   <VNavigationDrawer
     v-model="sidebar"
     width="275"
@@ -119,7 +119,7 @@ watch(() => display, () => {
     </PerfectScrollbar>
   </VNavigationDrawer>
 
-  <!-- 👉 Navbar for desktop devices  -->
+  <!--    Navbar for desktop devices  -->
   <div class="navbar-wrapper" :class="{ 'scrolled': y > 20 }">
     <div class="container-narrow">
       <nav class="glass-navbar">

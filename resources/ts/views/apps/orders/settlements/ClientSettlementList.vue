@@ -16,7 +16,7 @@ const selectedStatus = ref<string | null>(null);
 const selectedApprovalStatus = ref<string | null>(null);
 const selectedClient = ref<number | null>(route.query.client_user_id ? Number(route.query.client_user_id) : null);
 
-// 👉 Headers
+//    Headers
 const headers = [
   { title: "#ID", key: "id" },
   { title: "Client", key: "client" },
@@ -86,7 +86,7 @@ watch(searchQuery, (val) => {
   }, 400);
 });
 
-// 👉 Fetching Settlements
+//    Fetching Settlements
 const {
   data: settlementsData,
   execute: fetchSettlements,
@@ -137,7 +137,7 @@ const approvalColors: any = {
   REJECTED: "error",
 };
 
-// 👉 Actions
+//    Actions
 const isDetailsDialogVisible = ref(false);
 const selectedSettlement = ref<any>(null);
 const isCreateDialogVisible = ref(false);
@@ -284,7 +284,7 @@ const bulkUpdateStatus = async (status: string) => {
 const printInvoice = (id: number) => {
   window.open(`/apps/orders/print/${id}?type=settlement`, "_blank");
 };
-// 👉 Export
+//    Export
 
 const exportSettlements = async () => {
   const params: any = {};
@@ -463,7 +463,7 @@ const exportSettlements = async () => {
             Create Settlement
           </VBtn>
 
-          <!-- 👉 Column Visibility Toggle -->
+          <!--    Column Visibility Toggle -->
           <VMenu :close-on-content-click="false">
             <template #activator="{ props }">
               <VBtn icon variant="tonal" color="secondary" v-bind="props">

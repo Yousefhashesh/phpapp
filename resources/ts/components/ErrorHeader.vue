@@ -10,7 +10,7 @@ const props = defineProps<Props>()
 
 <template>
   <div class="text-center">
-    <!-- 👉 Title and subtitle -->
+    <!--    Title and subtitle -->
     <h1
       v-if="props.statusCode"
       class="header-title font-weight-medium mb-2"

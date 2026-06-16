@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { useApi } from '@/composables/useApi'
 
-// 👉 Scanned Orders
+//    Scanned Orders
 const scannedOrders = ref<any[]>([])
+const selectedOrders = ref<any[]>([])
 const barcodeInput = ref('')
 const isLoading = ref(false)
 const inputRef = ref<any>(null)
 
-// 👉 Sound Effects (From public directory)
+//    Sound Effects (From public directory)
 const playSuccessSound = () => {
   const audio = new Audio('/scanner.mp3')
   audio.play().catch(e => console.error('Audio play failed:', e))
@@ -18,7 +19,7 @@ const playErrorSound = () => {
   audio.play().catch(e => console.error('Audio play failed:', e))
 }
 
-// 👉 Handle Scan
+//    Handle Scan
 const onScan = async () => {
   const code = barcodeInput.value.trim()
   if (!code) return
@@ -135,7 +136,7 @@ const onScan = async () => {
   }
 }
 
-// 👉 Table Headers
+//    Table Headers
 const headers = [
   { title: 'Order ID', key: 'id' },
   { title: 'Code', key: 'code' },
@@ -160,10 +161,11 @@ const removeOrder = (id: number) => {
 
 const clearAll = () => {
   scannedOrders.value = []
+  selectedOrders.value = []
 }
 
-// 👉 Action Logic
-const actionType = ref<'status' | 'shipper' | 'view' | 'shipper_return' | 'client_return'>('view')
+//    Action Logic
+const actionType = ref<'status' | 'shipper' | 'view' | 'shipper_return' | 'client_return' | 'approve' | 'reject'>('view')
 const selectedStatus = ref<string | null>(null)
 const selectedShipper = ref<number | null>(null)
 const isActionProcessing = ref(false)
@@ -171,7 +173,7 @@ const isActionProcessing = ref(false)
 const shippers = ref<any[]>([])
 const loadShippers = async () => {
   try {
-    const { data: res } = await useApi<any>('/shippers?per_page=100').get().json()
+    const { data: res } = await useApi<any>(createUrl('/shippers', { query: { per_page: 500 } })).get().json()
     const result = (res.value && Array.isArray(res.value.data)) ? res.value.data : []
     shippers.value = result.map((s: any) => ({
       name: s.user?.name || s.user?.username || 'المندوب كود #' + (s.user_id || s.id),
@@ -187,10 +189,11 @@ onMounted(() => {
 })
 
 const applyActionToAll = async () => {
-  if (!scannedOrders.value.length) return
+  const targetOrders = selectedOrders.value.length ? selectedOrders.value : scannedOrders.value
+  if (!targetOrders.length) return
   if (actionType.value === 'view') return
   
-  const orderIds = scannedOrders.value.map(o => o.id)
+  const orderIds = targetOrders.map(o => o.id)
 
   isActionProcessing.value = true
 
@@ -204,8 +207,9 @@ const applyActionToAll = async () => {
       }).json()
 
       if (!error.value) {
-        alert('Status updated successfully for all orders')
-        clearAll()
+        alert('Status updated successfully for selected orders')
+        scannedOrders.value = scannedOrders.value.filter(o => !orderIds.includes(o.id))
+        selectedOrders.value = []
       }
     } else if (actionType.value === 'shipper') {
       if (!selectedShipper.value) return
@@ -220,10 +224,39 @@ const applyActionToAll = async () => {
       }).json()
 
       if (!error.value) {
-        alert('Shipper updated successfully for all orders')
-        clearAll()
+        alert('Shipper updated successfully for selected orders')
+        scannedOrders.value = scannedOrders.value.filter(o => !orderIds.includes(o.id))
+        selectedOrders.value = []
       } else {
         alert('حدث خطأ أثناء تحديث المندوب')
+      }
+    } else if (actionType.value === 'approve') {
+      if (confirm(`Approve ${orderIds.length} selected orders?`)) {
+        const { error } = await useApi('/orders/bulk-approve').patch({
+          order_ids: orderIds,
+        }).json()
+        if (!error.value) {
+          alert('Approved successfully')
+          scannedOrders.value = scannedOrders.value.filter(o => !orderIds.includes(o.id))
+          selectedOrders.value = []
+        } else {
+          alert('حدث خطأ أثناء الموافقة')
+        }
+      }
+    } else if (actionType.value === 'reject') {
+      const note = prompt(`Reject ${orderIds.length} selected orders? Rejection reason (Optional):`)
+      if (note !== null) {
+        const { error } = await useApi('/orders/bulk-reject').patch({
+          order_ids: orderIds,
+          approval_note: note
+        }).json()
+        if (!error.value) {
+          alert('Rejected successfully')
+          scannedOrders.value = scannedOrders.value.filter(o => !orderIds.includes(o.id))
+          selectedOrders.value = []
+        } else {
+          alert('حدث خطأ أثناء الرفض')
+        }
       }
     } else if (actionType.value === 'shipper_return') {
       const { data, error } = await useApi('/shipper-returns/bulk-scan').post({
@@ -231,7 +264,8 @@ const applyActionToAll = async () => {
       }).json()
       if (!error.value) {
         alert(data.value?.message || 'Shipper returns processed successfully')
-        clearAll()
+        scannedOrders.value = scannedOrders.value.filter(o => !orderIds.includes(o.id))
+        selectedOrders.value = []
       }
     } else if (actionType.value === 'client_return') {
       const { data, error } = await useApi('/client-returns/bulk-scan').post({
@@ -239,7 +273,8 @@ const applyActionToAll = async () => {
       }).json()
       if (!error.value) {
         alert(data.value?.message || 'Client returns processed successfully')
-        clearAll()
+        scannedOrders.value = scannedOrders.value.filter(o => !orderIds.includes(o.id))
+        selectedOrders.value = []
       }
     }
   } catch (e) {
@@ -250,7 +285,7 @@ const applyActionToAll = async () => {
   }
 }
 
-// 👉 Row actions (Approve / Reject)
+//    Row actions (Approve / Reject)
 const approveOrder = async (order: any) => {
   try {
     const { error } = await useApi(`/orders/${order.id}/approve`).patch().json()
@@ -293,7 +328,7 @@ const handleGlobalClick = () => {
 
 <template>
   <VRow>
-    <!-- 👉 Header & Stats -->
+    <!--    Header & Stats -->
     <VCol cols="12">
       <div class="d-flex align-center justify-space-between flex-wrap gap-4 mb-4">
         <div>
@@ -315,7 +350,7 @@ const handleGlobalClick = () => {
       </div>
     </VCol>
 
-    <!-- 👉 Scanner Input -->
+    <!--    Scanner Input -->
     <VCol cols="12">
       <VCard @click="handleGlobalClick">
         <VCardText>
@@ -341,7 +376,7 @@ const handleGlobalClick = () => {
       </VCard>
     </VCol>
 
-    <!-- 👉 Actions Card -->
+    <!--    Actions Card -->
     <VCol cols="12">
       <VCard title="Bulk Actions">
         <VCardText>
@@ -354,6 +389,8 @@ const handleGlobalClick = () => {
                 <VRadio label="Shipper" value="shipper" />
                 <VRadio label="Shipper Return (مرتجع مندوب)" value="shipper_return" color="error" />
                 <VRadio label="Client Return (مرتجع عميل)" value="client_return" color="success" />
+                <VRadio label="Approve (قبول)" value="approve" color="success" />
+                <VRadio label="Reject (رفض)" value="reject" color="error" />
               </VRadioGroup>
             </VCol>
 
@@ -387,7 +424,7 @@ const handleGlobalClick = () => {
                 :disabled="!scannedOrders.length"
                 @click="applyActionToAll"
               >
-                {{ actionType.includes('return') ? 'Process Returns' : 'Apply to All' }}
+                {{ actionType.includes('return') ? 'Process Returns' : (selectedOrders.length ? 'Apply to Selected' : 'Apply to All') }}
               </VBtn>
               <VBtn 
                 color="secondary" 
@@ -403,10 +440,13 @@ const handleGlobalClick = () => {
       </VCard>
     </VCol>
 
-    <!-- 👉 Scanned Orders Table -->
+    <!--    Scanned Orders Table -->
     <VCol cols="12">
       <VCard>
         <VDataTable
+          v-model="selectedOrders"
+          show-select
+          return-object
           :headers="headers"
           :items="scannedOrders"
           item-value="id"

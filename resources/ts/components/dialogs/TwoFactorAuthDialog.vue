@@ -60,7 +60,7 @@ const openSelectedMethodDialog = () => {
 
     <VCard class="pa-2 pa-sm-10">
       <VCardText>
-        <!-- 👉 Title -->
+        <!--    Title -->
         <div class="mb-6">
           <h4 class="text-h4 text-center mb-2">
             Select Authentication Method

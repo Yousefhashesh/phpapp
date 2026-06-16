@@ -18,7 +18,7 @@ const headers = [
   { title: 'Actions', key: 'actions', sortable: false },
 ]
 
-// 👉 Store
+//    Store
 const searchQuery = ref('')
 const itemsPerPage = ref(10)
 const page = ref(1)
@@ -63,7 +63,7 @@ watch(visibleHeaderKeys, (newVal) => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(newVal))
 })
 
-// 👉 Fetching clients
+//    Fetching clients
 const { data: clientsData, execute: fetchClients } = await useApi<any>(createUrl('/users', {
   query: {
     q: searchQuery,
@@ -116,7 +116,7 @@ const deleteClient = async (id: number) => {
             style="inline-size: 15rem;"
           />
 
-          <!-- 👉 Column Visibility Toggle -->
+          <!--    Column Visibility Toggle -->
           <VMenu :close-on-content-click="false">
             <template #activator="{ props }">
               <VBtn icon variant="tonal" color="secondary" v-bind="props">

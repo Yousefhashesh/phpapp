@@ -21,7 +21,7 @@ definePage({
       </p>
     </VCol>
 
-    <!-- 👉 Roles Cards -->
+    <!--    Roles Cards -->
     <VCol cols="12">
       <RoleCards />
     </VCol>
@@ -36,7 +36,7 @@ definePage({
     </VCol>
 
     <VCol cols="12">
-      <!-- 👉 User List  -->
+      <!--    User List  -->
       <UserList />
     </VCol>
   </VRow>

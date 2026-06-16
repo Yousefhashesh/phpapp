@@ -3,7 +3,7 @@ const QRCode = require('qrcode')
 const qrcodeTerminal = require('qrcode-terminal')
 const { Client, LocalAuth } = require('whatsapp-web.js')
 
-const PORT = Number(process.env.WHATSAPP_PORT || 3001)
+const PORT = Number(process.env.WHATSAPP_PORT || process.env.PORT ||3001 )
 const HOST = process.env.WHATSAPP_HOST || '127.0.0.1'
 const API_SECRET = process.env.WHATSAPP_API_SECRET || ''
 const DEFAULT_GROUP_ID = process.env.WHATSAPP_GROUP_ID || ''

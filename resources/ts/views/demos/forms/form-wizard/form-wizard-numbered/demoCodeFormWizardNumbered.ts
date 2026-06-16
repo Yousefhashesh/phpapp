@@ -43,7 +43,7 @@ const onSubmit = () => {
 <template>
   <VCard>
     <VCardText>
-      <!-- 👉 Stepper -->
+      <!--    Stepper -->
       <AppStepper
         v-model:current-step="currentStep"
         :items="numberedSteps"
@@ -54,7 +54,7 @@ const onSubmit = () => {
     <VDivider />
 
     <VCardText>
-      <!-- 👉 stepper content -->
+      <!--    stepper content -->
       <VForm>
         <VWindow
           v-model="currentStep"
@@ -326,7 +326,7 @@ const onSubmit = () => {
 <template>
   <VCard>
     <VCardText>
-      <!-- 👉 Stepper -->
+      <!--    Stepper -->
       <AppStepper
         v-model:current-step="currentStep"
         :items="numberedSteps"
@@ -337,7 +337,7 @@ const onSubmit = () => {
     <VDivider />
 
     <VCardText>
-      <!-- 👉 stepper content -->
+      <!--    stepper content -->
       <VForm>
         <VWindow
           v-model="currentStep"
@@ -611,7 +611,7 @@ const onSubmit = () => {
 </script>
 
 <template>
-  <!-- 👉 Stepper -->
+  <!--    Stepper -->
   <div class="mb-6">
     <AppStepper
       v-model:current-step="currentStep"
@@ -622,7 +622,7 @@ const onSubmit = () => {
 
   <VCard>
     <VCardText>
-      <!-- 👉 stepper content -->
+      <!--    stepper content -->
       <VForm>
         <VWindow
           v-model="currentStep"
@@ -872,7 +872,7 @@ const onSubmit = () => {
 </script>
 
 <template>
-  <!-- 👉 Stepper -->
+  <!--    Stepper -->
   <div class="mb-6">
     <AppStepper
       v-model:current-step="currentStep"
@@ -883,7 +883,7 @@ const onSubmit = () => {
 
   <VCard>
     <VCardText>
-      <!-- 👉 stepper content -->
+      <!--    stepper content -->
       <VForm>
         <VWindow
           v-model="currentStep"
@@ -1142,14 +1142,14 @@ const onSubmit = () => {
       cols="12"
       md="4"
     >
-      <!-- 👉 Stepper -->
+      <!--    Stepper -->
       <AppStepper
         v-model:current-step="currentStep"
         direction="vertical"
         :items="numberedSteps"
       />
     </VCol>
-    <!-- 👉 stepper content -->
+    <!--    stepper content -->
     <VCol
       cols="12"
       md="8"
@@ -1412,14 +1412,14 @@ const onSubmit = () => {
       cols="12"
       md="4"
     >
-      <!-- 👉 Stepper -->
+      <!--    Stepper -->
       <AppStepper
         v-model:current-step="currentStep"
         direction="vertical"
         :items="numberedSteps"
       />
     </VCol>
-    <!-- 👉 stepper content -->
+    <!--    stepper content -->
     <VCol
       cols="12"
       md="8"
@@ -1726,7 +1726,7 @@ const validateSocialLinkForm = () => {
 <template>
   <VCard>
     <VCardText>
-      <!-- 👉 Stepper -->
+      <!--    Stepper -->
       <AppStepper
         v-model:current-step="currentStep"
         :items="numberedSteps"
@@ -1737,7 +1737,7 @@ const validateSocialLinkForm = () => {
     <VDivider />
 
     <VCardText>
-      <!-- 👉 stepper content -->
+      <!--    stepper content -->
 
       <VWindow
         v-model="currentStep"
@@ -2119,7 +2119,7 @@ const validateSocialLinkForm = () => {
 <template>
   <VCard>
     <VCardText>
-      <!-- 👉 Stepper -->
+      <!--    Stepper -->
       <AppStepper
         v-model:current-step="currentStep"
         :items="numberedSteps"
@@ -2130,7 +2130,7 @@ const validateSocialLinkForm = () => {
     <VDivider />
 
     <VCardText>
-      <!-- 👉 stepper content -->
+      <!--    stepper content -->
 
       <VWindow
         v-model="currentStep"
@@ -2477,7 +2477,7 @@ const onSubmit = () => {
         :class="$vuetify.display.smAndDown ? 'border-b' : 'border-e'"
       >
         <VCardText>
-          <!-- 👉 Stepper -->
+          <!--    Stepper -->
           <AppStepper
             v-model:current-step="currentStep"
             direction="vertical"
@@ -2485,7 +2485,7 @@ const onSubmit = () => {
           />
         </VCardText>
       </VCol>
-      <!-- 👉 stepper content -->
+      <!--    stepper content -->
       <VCol
         cols="12"
         md="8"
@@ -2770,7 +2770,7 @@ const onSubmit = () => {
         :class="$vuetify.display.smAndDown ? 'border-b' : 'border-e'"
       >
         <VCardText>
-          <!-- 👉 Stepper -->
+          <!--    Stepper -->
           <AppStepper
             v-model:current-step="currentStep"
             direction="vertical"
@@ -2778,7 +2778,7 @@ const onSubmit = () => {
           />
         </VCardText>
       </VCol>
-      <!-- 👉 stepper content -->
+      <!--    stepper content -->
       <VCol
         cols="12"
         md="8"

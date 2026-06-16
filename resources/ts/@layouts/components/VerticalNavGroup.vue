@@ -186,7 +186,7 @@ watch(configStore.isVerticalNavMini(isVerticalNavHovered), val => {
         :is="TransitionGroup"
         name="transition-slide-x"
       >
-        <!-- 👉 Title -->
+        <!--    Title -->
         <Component
           :is="layoutConfig.app.i18n.enable ? 'i18n-t' : 'span'"
           v-bind="getDynamicI18nProps(item.title, 'span')"
@@ -197,7 +197,7 @@ watch(configStore.isVerticalNavMini(isVerticalNavHovered), val => {
           {{ item.title }}
         </Component>
 
-        <!-- 👉 Badge -->
+        <!--    Badge -->
         <Component
           :is="layoutConfig.app.i18n.enable ? 'i18n-t' : 'span'"
           v-bind="getDynamicI18nProps(item.badgeContent, 'span')"

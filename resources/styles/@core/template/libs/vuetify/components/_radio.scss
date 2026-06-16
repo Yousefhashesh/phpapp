@@ -1,10 +1,10 @@
 @use "@core-scss/base/mixins";
 @use "@configured-variables" as variables;
 
-// 👉 Radio
+//    Radio
 .v-radio,
 .v-radio-btn {
-  // 👉 radio icon opacity
+  //    radio icon opacity
   .v-selection-control__input > .v-icon {
     opacity: 1;
   }
@@ -39,7 +39,7 @@
   }
 }
 
-// 👉 Radio, Checkbox
+//    Radio, Checkbox
 
 .v-input.v-radio-group > .v-input__control > .v-label {
   margin-inline-start: 0;

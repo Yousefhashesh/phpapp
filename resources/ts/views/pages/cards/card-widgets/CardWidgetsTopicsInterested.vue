@@ -122,7 +122,7 @@ const topicsData = [
 </script>
 
 <template>
-  <!-- 👉 Topic You are Interested in -->
+  <!--    Topic You are Interested in -->
   <VCard>
     <VCardItem title="Topic you are interested in">
       <template #append>

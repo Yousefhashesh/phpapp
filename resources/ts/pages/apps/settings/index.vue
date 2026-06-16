@@ -43,6 +43,7 @@ const settingsData = ref<any>({
     whatsapp_replace_order_notifications: 'no',
     whatsapp_group_id: '',
     whatsapp_service_url: '',
+    whatsapp_group_client_mapping: '[]',
   },
 
   site_theme: {
@@ -150,6 +151,20 @@ const welcomePlansArray = computed({
   },
 })
 
+const whatsappGroupsArray = computed({
+  get: () => {
+    const val = settingsData.value.whatsapp?.whatsapp_group_id
+    if (!val) return []
+    if (Array.isArray(val)) return val
+    return val.split(',').map((s: any) => String(s).trim()).filter(Boolean)
+  },
+  set: (val: string[]) => {
+    if (settingsData.value.whatsapp) {
+      settingsData.value.whatsapp.whatsapp_group_id = val.join(',')
+    }
+  },
+})
+
 const updateSettings = async () => {
   const isFormWithFiles = logos.value.icon || logos.value.logoLight || logos.value.logoDark
   const flatSettings: any = {}
@@ -222,6 +237,46 @@ const whatsappGroups = ref<Array<{ id: string; name: string }>>([])
 const whatsappGroupsLoading = ref(false)
 const whatsappQrLoading = ref(false)
 let whatsappPollTimer: ReturnType<typeof setInterval> | null = null
+
+const clients = ref<any[]>([])
+const fetchClients = async () => {
+  try {
+    const response = await $api('/clients')
+    const data = Array.isArray(response)
+      ? response
+      : (response && Array.isArray(response.data) ? response.data : [])
+    clients.value = data.map((c: any) => ({
+      id: c.user_id || c.id,
+      name: c.user?.name || 'Unknown Client',
+    }))
+  } catch (error) {
+    console.error('Failed to fetch clients:', error)
+  }
+}
+
+const groupMappings = ref<Array<{ group_id: string; client_ids: number[] }>>([])
+
+watch(() => settingsData.value.whatsapp?.whatsapp_group_client_mapping, (newVal) => {
+  try {
+    groupMappings.value = newVal ? JSON.parse(newVal) : []
+  } catch {
+    groupMappings.value = []
+  }
+}, { immediate: true })
+
+watch(groupMappings, (newVal) => {
+  if (settingsData.value.whatsapp) {
+    settingsData.value.whatsapp.whatsapp_group_client_mapping = JSON.stringify(newVal)
+  }
+}, { deep: true })
+
+const addGroupMapping = () => {
+  groupMappings.value.push({ group_id: '', client_ids: [] })
+}
+
+const removeGroupMapping = (index: number) => {
+  groupMappings.value.splice(index, 1)
+}
 
 const checkWhatsAppStatus = async () => {
   try {
@@ -327,6 +382,7 @@ watch(activeTab, tab => {
 onMounted(() => {
   fetchSettings()
   fetchPlans()
+  fetchClients()
   checkWhatsAppStatus()
 })
 
@@ -615,12 +671,15 @@ onBeforeUnmount(() => {
                 </VCol>
                 <VCol cols="12" md="6">
                   <AppAutocomplete
-                    v-model="settingsData.whatsapp.whatsapp_group_id"
+                    v-model="whatsappGroupsArray"
                     label="اختر جروب واتساب"
-                    placeholder="اختر الجروب المراد الإرسال عليه"
+                    placeholder="اختر الجروبات المراد الإرسال عليها"
                     :items="whatsappGroups"
                     item-title="name"
                     item-value="id"
+                    multiple
+                    chips
+                    closable-chips
                     :loading="whatsappGroupsLoading"
                     :disabled="!whatsappStatus?.ready"
                     clearable
@@ -629,8 +688,8 @@ onBeforeUnmount(() => {
                 <VCol cols="12" md="6">
                   <AppTextField
                     v-model="settingsData.whatsapp.whatsapp_group_id"
-                    label="معرّف الجروب (يدوي - ينتهي بـ @g.us)"
-                    placeholder="120363123456789012@g.us"
+                    label="معرّف الجروب (يدوي - مفصولة بفاصلة ,)"
+                    placeholder="120363123456789012@g.us, 120363987654321012@g.us"
                   />
                 </VCol>
                 <VCol cols="12" md="6">
@@ -639,6 +698,75 @@ onBeforeUnmount(() => {
                     label="رابط خدمة الواتساب على السيرفر"
                     placeholder="http://127.0.0.1:3001"
                   />
+                </VCol>
+
+                <VCol cols="12">
+                  <VDivider class="my-4" />
+                  <div class="d-flex align-center justify-space-between mb-4">
+                    <div>
+                      <h6 class="text-h6">ربط المجموعات بالعملاء</h6>
+                      <p class="text-caption text-medium-emphasis mb-0">
+                        اختر المجموعات وحدد لكل مجموعة العملاء المراد إرسال أوردراتهم إليها
+                      </p>
+                    </div>
+                    <VBtn
+                      size="small"
+                      prepend-icon="tabler-plus"
+                      @click="addGroupMapping"
+                    >
+                      إضافة ربط جديد
+                    </VBtn>
+                  </div>
+
+                  <div v-if="groupMappings.length === 0" class="text-center py-6 border rounded dashed mb-4">
+                    <p class="text-body-2 text-medium-emphasis mb-0">
+                      لم يتم ربط أي مجموعة بعملاء بعد. سيتم الإرسال لكافة المجموعات الافتراضية المحددة أعلاه.
+                    </p>
+                  </div>
+
+                  <VCard v-for="(mapping, index) in groupMappings" :key="index" variant="outlined" class="mb-4 pa-4">
+                    <VRow align="center">
+                      <VCol cols="12" md="5">
+                        <VCombobox
+                          v-model="mapping.group_id"
+                          :items="whatsappGroups"
+                          item-title="name"
+                          item-value="id"
+                          :return-object="false"
+                          label="جروب الواتساب"
+                          placeholder="اختر الجروب أو اكتب المعرّف يدوياً"
+                          density="compact"
+                          hide-details="auto"
+                        />
+                      </VCol>
+                      <VCol cols="12" md="6">
+                        <AppAutocomplete
+                          v-model="mapping.client_ids"
+                          :items="clients"
+                          item-title="name"
+                          item-value="id"
+                          multiple
+                          chips
+                          closable-chips
+                          label="العملاء المرتبطين"
+                          placeholder="اختر العملاء الذين يتم إرسال أوردراتهم لهذا الجروب"
+                          density="compact"
+                          hide-details="auto"
+                        />
+                      </VCol>
+                      <VCol cols="12" md="1" class="text-center">
+                        <VBtn
+                          icon
+                          color="error"
+                          variant="text"
+                          size="small"
+                          @click="removeGroupMapping(index)"
+                        >
+                          <VIcon icon="tabler-trash" />
+                        </VBtn>
+                      </VCol>
+                    </VRow>
+                  </VCard>
                 </VCol>
               </VRow>
             </VWindowItem>

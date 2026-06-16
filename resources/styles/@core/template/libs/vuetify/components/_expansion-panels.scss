@@ -1,7 +1,7 @@
 @use "@core-scss/base/mixins";
 @use "@layouts/styles/mixins" as layoutsMixins;
 
-// 👉 Expansion panels
+//    Expansion panels
 body .v-layout .v-application__wrap .v-expansion-panels {
   .v-expansion-panel {
     margin-block-start: 0 !important;

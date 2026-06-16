@@ -29,7 +29,7 @@ interface Emit {
 
 const emit = defineEmits<Emit>()
 
-// 👉 Roles & Permissions
+//    Roles & Permissions
 const roleName = ref('')
 const selectedPermissions = ref<string[]>([])
 const allPermissions = ref<any[]>([])
@@ -58,7 +58,7 @@ watch(() => props.isDialogVisible, (val) => {
   }
 })
 
-// 👉 Grouping logic
+//    Grouping logic
 const groupedPermissions = computed(() => {
   const groups: Record<string, any[]> = {}
   

@@ -45,7 +45,7 @@ const referAndEarnSteps = [
     :width="$vuetify.display.smAndDown ? 'auto' : 800"
     @update:model-value="dialogVisibleUpdate"
   >
-    <!-- 👉 Dialog close btn -->
+    <!--    Dialog close btn -->
     <DialogCloseBtn @click="$emit('update:isDialogVisible', false)" />
 
     <VCard class="pa-2 pa-sm-10">

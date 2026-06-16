@@ -76,7 +76,7 @@ const paymentProvidersData = [
 
     <VCard class="pa-2 pa-sm-10">
       <VCardText>
-        <!-- 👉 Title -->
+        <!--    Title -->
         <h4 class="text-h4 text-center mb-2">
           Select Payment Providers
         </h4>

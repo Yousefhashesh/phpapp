@@ -37,12 +37,12 @@ watch(() => props, () => {
     :model-value="props.isDialogVisible"
     @update:model-value="onReset"
   >
-    <!-- 👉 dialog close btn -->
+    <!--    dialog close btn -->
     <DialogCloseBtn @click="onReset" />
 
     <VCard class="pa-2 pa-sm-10">
       <VCardText>
-        <!-- 👉 Title -->
+        <!--    Title -->
         <h4 class="text-h4 text-center mb-2">
           {{ props.permissionName ? 'Edit' : 'Add' }} Permission
         </h4>
@@ -50,7 +50,7 @@ watch(() => props, () => {
           {{ props.permissionName ? 'Edit' : 'Add' }}  permission as per your requirements.
         </p>
 
-        <!-- 👉 Form -->
+        <!--    Form -->
         <VForm>
           <VAlert
             type="warning"
@@ -63,7 +63,7 @@ watch(() => props, () => {
             </template>
           </VAlert>
 
-          <!-- 👉 Role name -->
+          <!--    Role name -->
           <div class="d-flex gap-4 mb-6 flex-wrap flex-column flex-sm-row">
             <AppTextField
               v-model="currentPermissionName"

@@ -40,7 +40,7 @@ const onSubmit = () => {
 </script>
 
 <template>
-  <!-- 👉 Stepper -->
+  <!--    Stepper -->
   <div class="mb-6">
     <AppStepper
       v-model:current-step="currentStep"
@@ -51,7 +51,7 @@ const onSubmit = () => {
 
   <VCard>
     <VCardText>
-      <!-- 👉 stepper content -->
+      <!--    stepper content -->
       <VForm>
         <VWindow
           v-model="currentStep"

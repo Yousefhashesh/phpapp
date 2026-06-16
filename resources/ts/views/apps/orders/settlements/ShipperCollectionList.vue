@@ -29,7 +29,7 @@ const columnPermissions: Record<string, string> = {
   status: "shipper-collection.column.status.view",
 };
 
-// 👉 Headers
+//    Headers
 const headers = [
   { title: "#ID", key: "id" },
   { title: "Shipper", key: "shipper" },
@@ -84,7 +84,7 @@ watch(searchQuery, (val) => {
   }, 400);
 });
 
-// 👉 Fetching Collections
+//    Fetching Collections
 const {
   data: collectionsData,
   execute: fetchCollections,
@@ -131,7 +131,7 @@ const approvalColors: any = {
   REJECTED: "error",
 };
 
-// 👉 Actions
+//    Actions
 const isDetailsDialogVisible = ref(false);
 const selectedCollection = ref<any>(null);
 const isCreateDialogVisible = ref(false);
@@ -273,7 +273,7 @@ const printInvoice = (id: number) => {
   window.open(`/apps/orders/print/${id}?type=collection`, "_blank");
 };
 
-// 👉 Export
+//    Export
 
 const exportCollections = async () => {
   const params: any = {};
@@ -441,7 +441,7 @@ const exportCollections = async () => {
             Create Collection
           </VBtn>
 
-          <!-- 👉 Column Visibility Toggle -->
+          <!--    Column Visibility Toggle -->
           <VMenu :close-on-content-click="false">
             <template #activator="{ props }">
               <VBtn icon variant="tonal" color="secondary" v-bind="props">

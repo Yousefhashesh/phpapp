@@ -48,7 +48,7 @@ const onSubmit = () => {
       cols="12"
       md="4"
     >
-      <!-- 👉 Stepper -->
+      <!--    Stepper -->
       <div class="pa-6">
         <AppStepper
           v-model:current-step="currentStep"
@@ -60,7 +60,7 @@ const onSubmit = () => {
       </div>
     </VCol>
 
-    <!-- 👉 stepper content -->
+    <!--    stepper content -->
     <VCol
       cols="12"
       md="8"

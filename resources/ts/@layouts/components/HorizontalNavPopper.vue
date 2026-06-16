@@ -114,7 +114,7 @@ watch(() => route.fullPath, hideContent)
     </div>
 
     <!-- SECTION Popper Content -->
-    <!-- 👉 Without transition -->
+    <!--    Without transition -->
     <template v-if="!themeConfig.horizontalNav.transition">
       <div
         ref="refPopper"
@@ -129,7 +129,7 @@ watch(() => route.fullPath, hideContent)
       </div>
     </template>
 
-    <!-- 👉 CSS Transition -->
+    <!--    CSS Transition -->
     <template v-else-if="typeof themeConfig.horizontalNav.transition === 'string'">
       <Transition :name="themeConfig.horizontalNav.transition">
         <div
@@ -147,7 +147,7 @@ watch(() => route.fullPath, hideContent)
       </Transition>
     </template>
 
-    <!-- 👉 Transition Component -->
+    <!--    Transition Component -->
     <template v-else>
       <Component :is="themeConfig.horizontalNav.transition">
         <div

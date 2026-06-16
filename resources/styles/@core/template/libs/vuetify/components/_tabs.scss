@@ -1,7 +1,7 @@
 @use "@configured-variables" as variables;
 @use "@core-scss/template/mixins" as templateMixins;
 
-// 👉 Tabs
+//    Tabs
 .v-tabs {
   &.v-tabs--vertical {
     --v-tabs-height: 38px !important;
@@ -64,7 +64,7 @@
   }
 }
 
-// 👉 Tab Pill
+//    Tab Pill
 .v-tabs.v-tabs-pill {
   .v-slide-group__content {
     gap: 0.25rem;

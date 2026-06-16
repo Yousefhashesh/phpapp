@@ -16,7 +16,7 @@ interface Props {
 const props = defineProps<Props>()
 const emit = defineEmits<Emit>()
 
-// 👉 Hotkey
+//    Hotkey
 // eslint-disable-next-line camelcase
 const { ctrl_k, meta_k } = useMagicKeys({
   passive: false,
@@ -30,7 +30,7 @@ const refSearchList = ref<VList>()
 const refSearchInput = ref<HTMLInputElement>()
 const searchQueryLocal = ref('')
 
-// 👉 watching control + / to open dialog
+//    watching control + / to open dialog
 /* eslint-disable camelcase */
 watch([
   ctrl_k, meta_k,
@@ -39,13 +39,13 @@ watch([
 })
 /* eslint-enable */
 
-// 👉 clear search result and close the dialog
+//    clear search result and close the dialog
 const clearSearchAndCloseDialog = () => {
   searchQueryLocal.value = ''
   emit('update:isDialogVisible', false)
 }
 
-// 👉 get fucus on search list
+//    get fucus on search list
 const getFocusOnSearchList = (e: KeyboardEvent) => {
   if (e.key === 'ArrowDown') {
     e.preventDefault()
@@ -62,7 +62,7 @@ const dialogModelValueUpdate = (val: boolean) => {
   emit('update:isDialogVisible', val)
 }
 
-// 👉 clear search query when redirect to another page
+//    clear search query when redirect to another page
 watch(
   () => props.isDialogVisible,
   () => { searchQueryLocal.value = '' },
@@ -88,7 +88,7 @@ watch(
         class="px-4"
         style="padding-block: 1rem 1.2rem;"
       >
-        <!-- 👉 Search Input -->
+        <!--    Search Input -->
         <VTextField
           ref="refSearchInput"
           v-model="searchQueryLocal"
@@ -100,7 +100,7 @@ watch(
           @keydown="getFocusOnSearchList"
           @update:model-value="$emit('search', searchQueryLocal)"
         >
-          <!-- 👉 Prepend Inner -->
+          <!--    Prepend Inner -->
           <template #prepend-inner>
             <div class="d-flex align-center text-high-emphasis me-1">
               <VIcon
@@ -110,7 +110,7 @@ watch(
             </div>
           </template>
 
-          <!-- 👉 Append Inner -->
+          <!--    Append Inner -->
           <template #append-inner>
             <div class="d-flex align-start">
               <div
@@ -130,15 +130,15 @@ watch(
         </VTextField>
       </VCardText>
 
-      <!-- 👉 Divider -->
+      <!--    Divider -->
       <VDivider />
 
-      <!-- 👉 Perfect Scrollbar -->
+      <!--    Perfect Scrollbar -->
       <PerfectScrollbar
         :options="{ wheelPropagation: false, suppressScrollX: true }"
         class="h-100"
       >
-        <!-- 👉 Suggestions -->
+        <!--    Suggestions -->
         <div
           v-show="!!props.searchResults && !searchQueryLocal && $slots.suggestions"
           class="h-100"
@@ -147,14 +147,14 @@ watch(
         </div>
 
         <template v-if="!isLoading">
-          <!-- 👉 Search List -->
+          <!--    Search List -->
           <VList
             v-show="searchQueryLocal.length && !!props.searchResults.length"
             ref="refSearchList"
             density="compact"
             class="app-bar-search-list py-0"
           >
-            <!-- 👉 list Item /List Sub header -->
+            <!--    list Item /List Sub header -->
             <template
               v-for="item in props.searchResults"
               :key="item"
@@ -170,7 +170,7 @@ watch(
             </template>
           </VList>
 
-          <!-- 👉 No Data found -->
+          <!--    No Data found -->
           <div
             v-show="!props.searchResults.length && searchQueryLocal.length"
             class="h-100"
@@ -194,7 +194,7 @@ watch(
           </div>
         </template>
 
-        <!-- 👉 Loading -->
+        <!--    Loading -->
         <template v-if="isLoading">
           <VSkeletonLoader
             v-for="i in 3"

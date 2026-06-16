@@ -1,14 +1,14 @@
 @use "@core-scss/base/utils";
 @use "@configured-variables" as variables;
 
-// 👉 Application
+//    Application
 // ℹ️ We need accurate vh in mobile devices as well
 .v-application__wrap {
   /* stylelint-disable-next-line liberty/use-logical-spec */
   min-height: 100dvh;
 }
 
-// 👉 Typography
+//    Typography
 h1,
 h2,
 h3,
@@ -35,7 +35,7 @@ body,
   color: rgba(var(--v-theme-on-background), var(--v-medium-emphasis-opacity));
 }
 
-// 👉 Grid
+//    Grid
 // Remove margin-bottom of v-input_details inside grid (validation error message)
 .v-row {
   .v-col,
@@ -46,7 +46,7 @@ body,
   }
 }
 
-// 👉 Button
+//    Button
 // Update tonal variant disabled opacity
 .v-btn--disabled {
   opacity: 0.65;
@@ -62,7 +62,7 @@ body,
   }
 }
 
-// 👉 Card
+//    Card
 
 // Removes padding-top for immediately placed v-card-text after itself
 .v-card-text {
@@ -72,7 +72,7 @@ body,
 }
 
 /*
-  👉 Checkbox & Radio Ripple
+     Checkbox & Radio Ripple
 
   TODO Checkbox and switch component. Remove it when vuetify resolve the extra spacing: https://github.com/vuetifyjs/vuetify/issues/15519
   We need this because form elements likes checkbox and switches are by default set to height of textfield height which is way big than we want
@@ -94,7 +94,7 @@ body,
 }
 
 /*
-  👉 Tabs
+     Tabs
   Disable tab transition
 
   This is for tabs where we don't have card wrapper to tabs and have multiple cards as tab content.
@@ -117,7 +117,7 @@ body,
   }
 }
 
-// 👉 List
+//    List
 .v-list {
   // Set icons opacity to .87
   .v-list-item__prepend > .v-icon,
@@ -126,7 +126,7 @@ body,
   }
 }
 
-// 👉 Card list
+//    Card list
 
 /*
   ℹ️ Custom class
@@ -167,7 +167,7 @@ body,
   }
 }
 
-// 👉 Divider
+//    Divider
 .v-divider {
   color: rgb(var(--v-border-color));
 }
@@ -176,7 +176,7 @@ body,
   block-size: inherit;
 }
 
-// 👉 DataTable
+//    DataTable
 .v-data-table {
   /* stylelint-disable-next-line no-descending-specificity */
   .v-checkbox-btn .v-selection-control__wrapper {
@@ -192,12 +192,12 @@ body,
   }
 }
 
-// 👉 v-field
+//    v-field
 .v-field:hover .v-field__outline {
   --v-field-border-opacity: var(--v-medium-emphasis-opacity);
 }
 
-// 👉 VLabel
+//    VLabel
 .v-label {
   opacity: 1 !important;
 
@@ -206,33 +206,33 @@ body,
   }
 }
 
-// 👉 Overlay
+//    Overlay
 .v-overlay__scrim,
 .v-navigation-drawer__scrim {
   background: rgba(var(--v-overlay-scrim-background), var(--v-overlay-scrim-opacity)) !important;
   opacity: 1 !important;
 }
 
-// 👉 VMessages
+//    VMessages
 .v-messages {
   color: rgba(var(--v-theme-on-surface), var(--v-medium-emphasis-opacity));
   opacity: 1 !important;
 }
 
-// 👉 Alert close btn
+//    Alert close btn
 .v-alert__close {
   .v-btn--icon .v-icon {
     --v-icon-size-multiplier: 1.5;
   }
 }
 
-// 👉 Badge icon alignment
+//    Badge icon alignment
 .v-badge__badge {
   display: flex;
   align-items: center;
 }
 
-// 👉 Btn focus outline style removed
+//    Btn focus outline style removed
 .v-btn:focus-visible::after {
   opacity: 0 !important;
 }
@@ -244,12 +244,12 @@ body,
   }
 }
 
-// 👉 VCard and VList subtitle color
+//    VCard and VList subtitle color
 .v-list-item-subtitle {
   color: rgba(var(--v-theme-on-background), var(--v-medium-emphasis-opacity));
 }
 
-// 👉 placeholders
+//    placeholders
 .v-field__input {
   @at-root {
     & input::placeholder,

@@ -33,11 +33,9 @@ class EntityObserver
         ActivityLogService::logCreated($model);
         app(WorkflowNotificationService::class)->handleModelCreated($model);
 
-        if ($model instanceof Order) {
-            app(WhatsAppService::class)->notifyOrderChange($model, 'created');
-        } elseif ($this->isFinancialWorkflowModel($model)) {
-            app(WhatsAppService::class)->notifyWorkflowEvent($model, 'created');
-        }
+        // if ($this->isFinancialWorkflowModel($model)) {
+        //     app(WhatsAppService::class)->notifyWorkflowEvent($model, 'created');
+        // }
     }
 
     public function updated(Model $model): void
@@ -73,10 +71,12 @@ class EntityObserver
         app(WorkflowNotificationService::class)->handleModelUpdated($model, $changes);
 
         if ($model instanceof Order) {
-            app(WhatsAppService::class)->notifyOrderChange($model, 'updated', $oldValues, $newValues);
-        } elseif ($this->isFinancialWorkflowModel($model)) {
+            if (array_key_exists('status', $newValues)) {
+                app(WhatsAppService::class)->notifyOrderChange($model, 'updated', $oldValues, $newValues);
+            }
+        } /* elseif ($this->isFinancialWorkflowModel($model)) {
             app(WhatsAppService::class)->notifyWorkflowEvent($model, 'updated', $oldValues, $newValues);
-        }
+        } */
     }
 
     public function deleted(Model $model): void
@@ -87,9 +87,9 @@ class EntityObserver
 
         ActivityLogService::logDeleted($model);
 
-        if ($this->isFinancialWorkflowModel($model)) {
-            app(WhatsAppService::class)->notifyWorkflowEvent($model, 'deleted');
-        }
+        // if ($this->isFinancialWorkflowModel($model)) {
+        //     app(WhatsAppService::class)->notifyWorkflowEvent($model, 'deleted');
+        // }
     }
 
     public function restored(Model $model): void

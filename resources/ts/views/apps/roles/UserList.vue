@@ -17,7 +17,7 @@ const headers = [
   { title: t('Actions'), key: 'actions', sortable: false },
 ]
 
-// 👉 Store
+//    Store
 const searchQuery = ref('')
 const selectedRole = ref()
 const selectedStatus = ref()
@@ -59,7 +59,7 @@ watch(visibleHeaderKeys, (newVal) => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(newVal))
 })
 
-// 👉 User update role logic
+//    User update role logic
 const isUpdateRoleDialogVisible = ref(false)
 const selectedUserForRole = ref<any>({ id: 0, name: '', roles: [] })
 
@@ -89,7 +89,7 @@ const updateOptions = (options: any) => {
   orderBy.value = options.sortBy[0]?.order
 }
 
-// 👉 Fetching users
+//    Fetching users
 const { data: usersData, execute: fetchUsers } = await useApi<any>(createUrl('/users', {
   query: {
     q: searchQuery,
@@ -102,7 +102,7 @@ const { data: usersData, execute: fetchUsers } = await useApi<any>(createUrl('/u
   },
 }))
 
-// 👉 Fetching real roles for filter
+//    Fetching real roles for filter
 const { data: fetchedRoles } = await useApi<any>('/roles')
 const roles = computed(() => {
   const rawRoles = fetchedRoles.value?.data || fetchedRoles.value || []
@@ -123,7 +123,7 @@ onMounted(() => {
   fetchUsers()
 })
 
-// 👉 search filters
+//    search filters
 const status = [
   { title: 'Active', value: 'active' },
   { title: 'Blocked', value: 'blocked' },
@@ -222,7 +222,7 @@ const deleteUser = async (id: number) => {
               style="inline-size: 10rem;"
             />
 
-          <!-- 👉 Column Visibility Toggle -->
+          <!--    Column Visibility Toggle -->
           <VMenu :close-on-content-click="false">
             <template #activator="{ props }">
               <VBtn icon variant="tonal" color="secondary" v-bind="props">
@@ -281,7 +281,7 @@ const deleteUser = async (id: number) => {
           </div>
         </template>
 
-        <!-- 👉 Role -->
+        <!--    Role -->
         <template #item.role="{ item }: { item: any }">
           <div class="d-flex align-center gap-x-2">
             <template v-for="role in item.roles" :key="role.name">

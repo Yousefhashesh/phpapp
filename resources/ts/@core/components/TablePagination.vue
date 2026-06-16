@@ -40,7 +40,7 @@ const updateItemsPerPage = (value: number) => {
           {{ paginationMeta({ page: props.page, itemsPerPage: props.itemsPerPage }, totalItems) }}
         </p>
 
-        <!-- 👉 Rows Per Page Selector -->
+        <!--    Rows Per Page Selector -->
         <div class="d-flex align-center gap-2">
           <span class="text-disabled text-xs">Show</span>
           <VSelect

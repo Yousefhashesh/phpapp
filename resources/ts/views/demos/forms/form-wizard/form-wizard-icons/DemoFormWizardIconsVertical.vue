@@ -52,7 +52,7 @@ const onSubmit = () => {
         :class="$vuetify.display.smAndDown ? 'border-b' : 'border-e'"
       >
         <VCardText>
-          <!-- 👉 Stepper -->
+          <!--    Stepper -->
           <AppStepper
             v-model:current-step="currentStep"
             direction="vertical"
@@ -62,7 +62,7 @@ const onSubmit = () => {
           />
         </VCardText>
       </VCol>
-      <!-- 👉 stepper content -->
+      <!--    stepper content -->
       <VCol
         cols="12"
         md="8"

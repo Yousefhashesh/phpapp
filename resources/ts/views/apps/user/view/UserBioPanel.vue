@@ -46,7 +46,7 @@ const isChangePlanDialogVisible = ref(false)
 const isUpdateCommissionDialogVisible = ref(false)
 
 
-// 👉 Role variant resolver
+//    Role variant resolver
 const resolveUserRoleVariant = (role: string) => {
   const roleLower = role?.toLowerCase()
   if (roleLower === 'client') return { color: 'success', icon: 'tabler-user' }
@@ -138,7 +138,7 @@ const suspendUser = async () => {
     <VCol cols="12">
       <VCard v-if="props.userData">
         <VCardText class="text-center pt-12">
-          <!-- 👉 Avatar -->
+          <!--    Avatar -->
           <div class="position-relative d-inline-block">
             <VAvatar
               rounded
@@ -195,13 +195,13 @@ const suspendUser = async () => {
             </VBtn>
           </div>
 
-          <!-- 👉 User name -->
+          <!--    User name -->
           <h5 class="text-h5 mt-4">
             {{ props.userData.name }}
           </h5>
 
           <div class="d-flex align-center justify-center gap-2 mt-2">
-            <!-- 👉 Role chip -->
+            <!--    Role chip -->
             <VChip
               label
               :color="resolveUserRoleVariant(userRole).color"
@@ -223,14 +223,14 @@ const suspendUser = async () => {
         </VCardText>
 
         <VCardText>
-          <!-- 👉 Details -->
+          <!--    Details -->
           <h5 class="text-h5">
             Details
           </h5>
 
           <VDivider class="my-4" />
 
-          <!-- 👉 User Details list -->
+          <!--    User Details list -->
           <VList class="card-list mt-2">
             <VListItem>
               <VListItemTitle>
@@ -304,7 +304,7 @@ const suspendUser = async () => {
           </VList>
         </VCardText>
 
-        <!-- 👉 Edit and Suspend button -->
+        <!--    Edit and Suspend button -->
         <VCardText class="d-flex justify-center gap-x-4">
           <VBtn
             variant="elevated"
@@ -380,7 +380,7 @@ const suspendUser = async () => {
     </VCol>
   </VRow>
 
-  <!-- 👉 Edit user info dialog -->
+  <!--    Edit user info dialog -->
   <UserInfoEditDialog
     v-model:is-dialog-visible="isUserInfoEditDialogVisible"
     :user-data="{

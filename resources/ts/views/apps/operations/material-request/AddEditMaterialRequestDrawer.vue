@@ -31,7 +31,7 @@ const approvalStatus = ref('PENDING')
 const shippingCost = ref(0)
 const items = ref<any[]>([])
 
-// 👉 Fetching Data
+//    Fetching Data
 const { data: clientsData } = await useApi<any>('/users?role=client')
 const clients = computed(() => clientsData.value?.data || [])
 
@@ -145,7 +145,7 @@ const handleDrawerModelValueUpdate = (val: boolean) => {
     :model-value="props.isDrawerOpen"
     @update:model-value="handleDrawerModelValueUpdate"
   >
-    <!-- 👉 Header -->
+    <!--    Header -->
     <AppDrawerHeaderSection
       :title="id ? 'Update Material Request' : 'Add Material Request'"
       @cancel="closeNavigationDrawer"
@@ -156,7 +156,7 @@ const handleDrawerModelValueUpdate = (val: boolean) => {
     <PerfectScrollbar :options="{ wheelPropagation: false }">
       <VCard flat>
         <VCardText>
-          <!-- 👉 Form -->
+          <!--    Form -->
           <VForm
             ref="refForm"
             v-model="isFormValid"

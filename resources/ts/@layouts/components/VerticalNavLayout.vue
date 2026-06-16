@@ -165,12 +165,12 @@ const verticalNavAttrs = computed(() => {
     @extend %layout-navbar-hidden;
   }
 
-  // 👉 Footer
+  //    Footer
   .layout-footer {
     @include mixins.boxed-content;
   }
 
-  // 👉 Layout overlay
+  //    Layout overlay
   .layout-overlay {
     position: fixed;
     z-index: variables.$layout-overlay-z-index;
@@ -195,7 +195,7 @@ const verticalNavAttrs = computed(() => {
     }
   }
 
-  // 👉 Content height fixed
+  //    Content height fixed
   &.layout-content-height-fixed {
     .layout-content-wrapper {
       max-block-size: 100dvh;

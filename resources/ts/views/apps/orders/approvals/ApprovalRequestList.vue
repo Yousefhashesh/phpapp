@@ -3,9 +3,12 @@ import { useApi } from '@/composables/useApi'
 import { createUrl } from '@core/composable/createUrl'
 import AddEditOrderModal from '../components/AddEditOrderModal.vue'
 import OrderStatusModal from '../components/OrderStatusModal.vue'
+import BulkOrderStatusModal from '../components/BulkOrderStatusModal.vue'
+import { useNotificationStore } from '@/stores/useNotificationStore'
 
 const isAddEditOrderModalVisible = ref(false)
 const isStatusModalVisible = ref(false)
+const isBulkStatusModalVisible = ref(false)
 const editingOrderId = ref<number | null>(null)
 const selectedOrderForStatus = ref<any>(null)
 
@@ -15,12 +18,25 @@ const selectedApprovalStatus = ref<string | null>('PENDING')
 const itemsPerPage = ref(50)
 const page = ref(1)
 
+const selectedOrders = ref<any[]>([])
+const notificationStatus = useNotificationStore()
+const notify = (msg: string, color: string = 'success') => {
+  notificationStatus.notify(msg, color)
+}
+
+const filters = ref({
+  code: '',
+  receiver_name: '',
+  address: '',
+  order_note: '',
+})
+
 const openStatusModal = (order: any) => {
   selectedOrderForStatus.value = order
   isStatusModalVisible.value = true
 }
 
-// 👉 Headers
+//    Headers
 const headers = [
   { title: 'CODE', key: 'code' },
   { title: 'RECEIVER', key: 'receiver_name' },
@@ -29,16 +45,17 @@ const headers = [
   { title: 'APPROVAL', key: 'approval_status' },
   { title: 'SHIPPER', key: 'shipper' },
   { title: 'CLIENT', key: 'client' },
+  { title: 'ORDER NOTE', key: 'order_note' },
   { title: 'DATE', key: 'created_at' },
   { title: 'ACTIONS', key: 'actions', sortable: false },
 ]
 
-// 👉 Filters State
+//    Filters State
 const selectedGovernorate = ref<number | null>(null)
 const selectedShipper = ref<number | null>(null)
 const selectedClient = ref<number | null>(null)
 
-// 👉 Fetching Filter Options
+//    Fetching Filter Options
 const governorates = ref<any[]>([])
 const shippers = ref<any[]>([])
 const clients = ref<any[]>([])
@@ -48,15 +65,21 @@ const fetchFilters = async () => {
         const { data: govData } = await useApi<any>('/governorates').get().json()
         governorates.value = govData.value?.data || govData.value || []
 
-        const { data: shipData } = await useApi<any>('/shippers').get().json()
-        shippers.value = shipData.value?.data || []
+        const { data: shipData } = await useApi<any>('/shippers?per_page=500').get().json()
+        shippers.value = (shipData.value?.data || []).map((s: any) => ({
+          id: s.user_id,
+          name: s.user?.name || 'Unknown',
+        }))
 
-        const { data: cliData } = await useApi<any>('/clients').get().json()
-        clients.value = cliData.value?.data || []
+        const { data: cliData } = await useApi<any>('/clients?per_page=500').get().json()
+        clients.value = (cliData.value?.data || []).map((c: any) => ({
+          id: c.user_id,
+          name: c.user?.name || 'Unknown',
+        }))
   } catch (e) { /*  */ }
 }
 
-// 👉 Fetching Orders
+//    Fetching Orders
 const orders = ref<any[]>([])
 const totalOrders = ref(0)
 const ordersLoading = ref(false)
@@ -74,6 +97,7 @@ const fetchOrders = async () => {
         client_user_id: selectedClient,
         per_page: itemsPerPage,
         page,
+        ...filters.value,
       },
     })).get().json()
     orders.value = oData.value?.data || []
@@ -87,7 +111,12 @@ onMounted(() => {
     fetchOrders()
 })
 
-watch([searchQuery, selectedStatus, selectedApprovalStatus, selectedGovernorate, selectedShipper, selectedClient, itemsPerPage, page], () => {
+watch([searchQuery, selectedStatus, selectedApprovalStatus, selectedGovernorate, selectedShipper, selectedClient, filters], () => {
+  page.value = 1
+  fetchOrders()
+}, { deep: true })
+
+watch([page, itemsPerPage], () => {
   fetchOrders()
 })
 
@@ -96,13 +125,14 @@ const approveOrder = async (id: number) => {
     try {
       const response = await useApi(`/orders/${id}/approve`).patch({}).json()
       if (response.error.value) {
-        alert('Error: ' + (response.error.value.message || 'Approval failed'))
+        notify('Error: ' + (response.error.value.message || 'Approval failed'), 'error')
       } else {
+        notify('Order approved successfully', 'success')
         fetchOrders()
       }
     } catch (e) {
       console.error('Approve error:', e)
-      alert('Network Error during approval')
+      notify('Network Error during approval', 'error')
     }
   }
 }
@@ -115,13 +145,58 @@ const rejectOrder = async (id: number) => {
         approval_note: note 
       }).json()
       if (response.error.value) {
-        alert('Error: ' + (response.error.value.message || 'Rejection failed'))
+        notify('Error: ' + (response.error.value.message || 'Rejection failed'), 'error')
       } else {
+        notify('Order rejected successfully', 'success')
         fetchOrders()
       }
     } catch (e) {
       console.error('Reject error:', e)
-      alert('Network Error during rejection')
+      notify('Network Error during rejection', 'error')
+    }
+  }
+}
+
+const bulkApproveOrders = async () => {
+  if (!selectedOrders.value.length) return
+  if (confirm(`Approve ${selectedOrders.value.length} selected orders?`)) {
+    try {
+      const ids = selectedOrders.value.map(o => o.id)
+      const response = await useApi('/orders/bulk-approve').patch({ order_ids: ids }).json()
+      if (response.error.value) {
+        notify('Error: ' + (response.error.value.message || 'Bulk approval failed'), 'error')
+      } else {
+        notify('Bulk approval completed successfully', 'success')
+        selectedOrders.value = []
+        fetchOrders()
+      }
+    } catch (e) {
+      console.error('Bulk approve error:', e)
+      notify('Network Error during bulk approval', 'error')
+    }
+  }
+}
+
+const bulkRejectOrders = async () => {
+  if (!selectedOrders.value.length) return
+  const note = prompt(`Reject ${selectedOrders.value.length} selected orders? Rejection reason (Optional):`)
+  if (note !== null) {
+    try {
+      const ids = selectedOrders.value.map(o => o.id)
+      const response = await useApi('/orders/bulk-reject').patch({ 
+        order_ids: ids,
+        approval_note: note 
+      }).json()
+      if (response.error.value) {
+        notify('Error: ' + (response.error.value.message || 'Bulk rejection failed'), 'error')
+      } else {
+        notify('Bulk rejection completed successfully', 'success')
+        selectedOrders.value = []
+        fetchOrders()
+      }
+    } catch (e) {
+      console.error('Bulk reject error:', e)
+      notify('Network Error during bulk rejection', 'error')
     }
   }
 }
@@ -175,14 +250,75 @@ const deleteOrder = async (id: number) => {
       </VCardText>
       <VDivider />
 
+      <!-- 📦 Bulk Actions Row (Header Position) -->
+      <VCardText v-show="selectedOrders.length" class="bg-light-primary py-2 border-bottom border-top rounded-0">
+        <div class="d-flex align-center gap-4 flex-wrap">
+          <div class="text-subtitle-2 text-primary font-weight-bold">
+            <VChip color="primary" size="small" class="me-2">{{ selectedOrders.length }}</VChip>
+            Elements Selected
+          </div>
+          <VDivider vertical class="mx-2" />
+          <VBtn size="small" color="success" variant="elevated" prepend-icon="tabler-check" @click="bulkApproveOrders">Approve Selected</VBtn>
+          <VBtn size="small" color="error" variant="elevated" prepend-icon="tabler-x" @click="bulkRejectOrders">Reject Selected</VBtn>
+          <VBtn size="small" color="primary" variant="elevated" prepend-icon="tabler-settings" @click="isBulkStatusModalVisible = true">Change Status</VBtn>
+          <VSpacer />
+          <VBtn icon size="x-small" variant="text" color="secondary" @click="selectedOrders = []"><VIcon icon="tabler-x" /></VBtn>
+        </div>
+      </VCardText>
+
       <VDataTableServer
+        v-model="selectedOrders"
         v-model:items-per-page="itemsPerPage"
         v-model:page="page"
         :items="orders"
         :items-length="totalOrders"
         :headers="headers"
-        class="text-no-wrap"
+        item-value="id"
+        return-object
+        show-select
+        class="text-no-wrap filter-table"
       >
+        <!--    Header Filter Slots -->
+        <template #header.code="{ column }">
+          <div class="header-filter">
+            <span class="header-title">{{ column.title }}</span>
+            <VTextField v-model="filters.code" density="compact" hide-details variant="outlined" placeholder="بحث..." class="filter-input-outlined" />
+          </div>
+        </template>
+        <template #header.receiver_name="{ column }">
+          <div class="header-filter">
+            <span class="header-title">{{ column.title }}</span>
+            <VTextField v-model="filters.receiver_name" density="compact" hide-details variant="outlined" placeholder="المرسل إليه" class="filter-input-outlined" />
+          </div>
+        </template>
+        <template #header.area="{ column }">
+          <div class="header-filter">
+            <span class="header-title">{{ column.title }}</span>
+            <VTextField v-model="filters.address" density="compact" hide-details variant="outlined" placeholder="المنطقة" class="filter-input-outlined" />
+          </div>
+        </template>
+        <template #header.shipper="{ column }">
+          <div class="header-filter"><span class="header-title">{{ column.title }}</span>
+            <VSelect v-model="selectedShipper" :items="shippers" item-title="name" item-value="id" clearable density="compact" hide-details variant="outlined" class="filter-select-outlined" placeholder="المندوب" />
+          </div>
+        </template>
+        <template #header.client="{ column }">
+          <div class="header-filter"><span class="header-title">{{ column.title }}</span>
+            <VSelect v-model="selectedClient" :items="clients" item-title="name" item-value="id" clearable density="compact" hide-details variant="outlined" class="filter-select-outlined" placeholder="العميل" />
+          </div>
+        </template>
+        <template #header.order_note="{ column }">
+          <div class="header-filter">
+            <span class="header-title">{{ column.title }}</span>
+            <VTextField v-model="filters.order_note" density="compact" hide-details variant="outlined" placeholder="ملاحظات" class="filter-input-outlined" />
+          </div>
+        </template>
+
+        <!-- Remaining Headers Standard -->
+        <template v-for="h in ['total_amount', 'approval_status', 'created_at', 'actions']" #[`header.${h}`]="{ column }">
+          <div class="header-filter justify-center"><span class="header-title">{{ column.title }}</span></div>
+        </template>
+
         <template #item.code="{ item }: { item: any }">
           <span class="text-h6 text-primary font-weight-bold">#{{ item.code }}</span>
         </template>
@@ -201,7 +337,7 @@ const deleteOrder = async (id: number) => {
           </div>
         </template>
         <template #item.area="{ item }: { item: any }">
-          <div class="d-flex flex-column">
+          <div class="d-flex flex-column text-start">
              <span class="text-sm">{{ item.governorate?.name || '-' }}</span>
              <span class="text-xs text-disabled">{{ item.city?.name || '-' }}</span>
            </div>
@@ -211,6 +347,9 @@ const deleteOrder = async (id: number) => {
         </template>
         <template #item.client="{ item }: { item: any }">
            <span class="text-sm">{{ item.client?.name || 'N/A' }}</span>
+        </template>
+        <template #item.order_note="{ item }: { item: any }">
+          <span class="text-xs text-wrap" style="display: block; max-inline-size: 150px;">{{ item.order_note || '—' }}</span>
         </template>
         <template #item.created_at="{ item }: { item: any }">
           <span class="text-sm">{{ new Date(item.created_at).toLocaleDateString() }}</span>
@@ -240,5 +379,68 @@ const deleteOrder = async (id: number) => {
       :order="selectedOrderForStatus"
       @status-updated="fetchOrders"
     />
+    <BulkOrderStatusModal
+      v-model:is-dialog-visible="isBulkStatusModalVisible"
+      :selected-orders="selectedOrders"
+      @status-updated="() => { fetchOrders(); selectedOrders = [] }"
+    />
   </section>
 </template>
+
+<style lang="scss" scoped>
+.filter-table :deep(th),
+.filter-table :deep(td) {
+  border-inline-end: 1.5px solid rgba(var(--v-border-color), 0.1) !important;
+  border-inline-start: 1.5px solid rgba(var(--v-border-color), 0.1) !important;
+  text-align: center !important;
+  vertical-align: middle !important;
+}
+
+.filter-table :deep(th) {
+  background-color: var(--v-surface-variant) !important;
+  border-block-end: 1px solid rgba(var(--v-border-color), 0.1) !important;
+  padding-block: 8px 20px !important;
+  vertical-align: top !important;
+  white-space: nowrap;
+}
+
+.header-filter { display: flex; flex-direction: column; gap: 4px; margin-block-start: 4px; min-inline-size: 80px; }
+
+.header-title {
+  display: block;
+  color: rgba(var(--v-theme-on-surface), 0.9);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin-block-end: 2px;
+  text-align: center;
+}
+
+.filter-input-outlined :deep(.v-field__input) {
+  background-color: rgb(var(--v-theme-surface));
+  color: var(--v-theme-primary) !important;
+  font-size: 0.75rem !important;
+  min-block-size: 28px !important;
+  padding-block: 4px !important;
+}
+
+.filter-input-outlined :deep(.v-field__outline) {
+  --v-field-border-opacity: 0.15;
+}
+
+.filter-select-outlined :deep(.v-field__input) {
+  background-color: rgb(var(--v-theme-surface));
+  color: var(--v-theme-primary);
+  font-size: 0.75rem !important;
+  min-block-size: 28px !important;
+  padding-inline: 8px !important;
+}
+
+.filter-select-outlined :deep(.v-field__outline) {
+  --v-field-border-opacity: 0.15;
+}
+
+.filter-table :deep(td) { font-size: 0.8rem !important; padding-block: 12px !important; padding-inline: 8px !important; }
+.text-xs { font-size: 0.75rem !important; line-height: 1.2; }
+.text-sm { font-size: 0.875rem !important; }
+</style>

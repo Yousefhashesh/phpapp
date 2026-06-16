@@ -5,7 +5,7 @@ import type { UserProperties } from '@/views/apps/user/types'
 import { createUrl } from '@core/composable/createUrl'
 import { avatarText } from '@core/utils/formatters'
 
-// 👉 Store
+
 const searchQuery = ref('')
 const selectedRole = ref()
 const selectedStatus = ref()
@@ -38,7 +38,6 @@ const headers = [
   { title: 'Actions', key: 'actions', sortable: false },
 ]
 
-// 👉 Fetching users
 const { data: usersData, execute: fetchUsers } = await useApi<any>(createUrl('/users', {
   query: {
     q: searchQuery,
@@ -54,7 +53,7 @@ const { data: usersData, execute: fetchUsers } = await useApi<any>(createUrl('/u
 const users = computed((): UserProperties[] => usersData.value?.data || [])
 const totalUsers = computed(() => usersData.value?.total || 0)
 
-// 👉 stats from API
+
 const widgetData = computed(() => {
   const stats = usersData.value?.stats || { total: 0, shippers: 0, clients: 0, blocked: 0 }
   return [
@@ -65,7 +64,7 @@ const widgetData = computed(() => {
   ]
 })
 
-// 👉 search filters
+//    search filters
 const roles = [
   { title: 'Admin', value: 'admin' },
   { title: 'Client', value: 'client' },
@@ -125,7 +124,7 @@ const deleteUser = async (id: number) => {
 
 <template>
   <section>
-    <!-- 👉 Widgets -->
+    <!--    Widgets -->
     <div class="d-flex mb-6">
       <VRow>
         <template
@@ -286,7 +285,7 @@ const deleteUser = async (id: number) => {
           </div>
         </template>
 
-        <!-- 👉 Role -->
+        <!--    Role -->
         <template #item.role="{ item }">
           <div class="d-flex align-center gap-x-2">
             <template v-for="role in item.roles" :key="role.name">

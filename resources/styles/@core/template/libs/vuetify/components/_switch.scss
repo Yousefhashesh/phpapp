@@ -1,7 +1,7 @@
 @use "@configured-variables" as variables;
 @use "@core-scss/template/mixins" as templateMixins;
 
-// 👉 switch
+//    switch
 .v-switch {
   &.v-switch--inset {
     .v-selection-control {

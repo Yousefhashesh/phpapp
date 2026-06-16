@@ -23,46 +23,68 @@ class WhatsAppService
         return in_array(strtolower((string) $value), ['1', 'true', 'yes', 'on'], true);
     }
 
-    public function sendGroupMessage(string $message): bool
+    public function sendGroupMessage(string $message, ?array $groupIds = null): bool
     {
         if (! $this->isEnabled()) {
             return false;
         }
 
-        $groupId = Setting::getValue('whatsapp_group_id', config('whatsapp.group_id'));
-        if (! filled($groupId)) {
+        if ($groupIds === null) {
+            $groupIdsString = Setting::getValue('whatsapp_group_id', config('whatsapp.group_id'));
+            if (! filled($groupIdsString)) {
+                return false;
+            }
+
+            $groupIds = array_filter(array_map('trim', explode(',', (string) $groupIdsString)));
+        }
+
+        if (empty($groupIds)) {
             return false;
         }
 
         $url = rtrim((string) Setting::getValue('whatsapp_service_url', config('whatsapp.service_url')), '/');
+        $apiSecret = (string) Setting::getValue('whatsapp_api_secret', config('whatsapp.api_secret'));
+        $success = true;
 
-        try {
-            $response = Http::timeout(15)
-                ->withHeaders([
-                    'X-Api-Secret' => (string) config('whatsapp.api_secret'),
-                ])
-                ->post("{$url}/send", [
-                    'groupId' => $groupId,
-                    'message' => $message,
+        $isUltraMsg = str_contains(strtolower($url), 'ultramsg.com');
+
+        foreach ($groupIds as $groupId) {
+            try {
+                if ($isUltraMsg) {
+                    $response = Http::timeout(15)
+                        ->asForm()
+                        ->post("{$url}/messages/chat", [
+                            'token' => $apiSecret,
+                            'to' => $groupId,
+                            'body' => $message,
+                        ]);
+                } else {
+                    $response = Http::timeout(15)
+                        ->withHeaders([
+                            'X-Api-Secret' => $apiSecret,
+                        ])
+                        ->post("{$url}/send", [
+                            'groupId' => $groupId,
+                            'message' => $message,
+                        ]);
+                }
+
+                if (! $response->successful()) {
+                    Log::warning('WhatsApp service error for group: ' . $groupId, [
+                        'status' => $response->status(),
+                        'body' => $response->body(),
+                    ]);
+                    $success = false;
+                }
+            } catch (\Throwable $exception) {
+                Log::warning('WhatsApp service unreachable for group: ' . $groupId, [
+                    'message' => $exception->getMessage(),
                 ]);
-
-            if (! $response->successful()) {
-                Log::warning('WhatsApp service error', [
-                    'status' => $response->status(),
-                    'body' => $response->body(),
-                ]);
-
-                return false;
+                $success = false;
             }
-
-            return true;
-        } catch (\Throwable $exception) {
-            Log::warning('WhatsApp service unreachable', [
-                'message' => $exception->getMessage(),
-            ]);
-
-            return false;
         }
+
+        return $success;
     }
 
     /**
@@ -87,7 +109,8 @@ class WhatsAppService
             '📦 *سجل أوردر Shipya\n أهلا فريق العمل هذا الأوردر تم تحديثه *',
             '━━━━━━━━━━━━━━━━',
             "الكود: *#{$order->code}*",
-            "الإجراء: {$this->resolveActionLabel($action, $oldValues, $newValues)}",
+            "الكود الخارجي: *#{$order->external_code}*",
+          //  "الإجراء: {$this->resolveActionLabel($action, $oldValues, $newValues)}",
         ];
 
         if ($action === 'created') {
@@ -109,16 +132,34 @@ class WhatsAppService
         }
        
         
-        $lines[] = "العميل: ".($order->client?->name ?? '—');
-        $lines[] = " هاتف العميل  : ".($order->client?->phone ?? '—');
-         $lines[] = "العنوان   :".($order->address ?? '—');
-         $lines[] = "ملاحظات حالة الاوردر :".($order->latest_status_note ?? '—');
-        $lines[] = "ملاحظات   :".($order->note ?? '—');
-        $lines[] = "المندوب: ".($order->shipper?->name ?? '—');
-        $lines[] = "بواسطة: {$actorName}";
-        $lines[] = 'الوقت: '.now()->timezone(config('app.timezone'))->format('d/m/Y H:i');
+            $lines[] = "العميل: ".($order->client?->name ?? '—');
+              $lines[] = "المستلم: {$order->receiver_name}";
+            $lines[] = "الهاتف: {$order->phone}";
+             $lines[] = "الهاتف الثاني: {$order->phone_2}";
+            $lines[] = "العنوان   :".($order->address ?? '—');
+           $lines[] = "ملاحظات حالة الاوردر :".($order->latest_status_note ?? '—');
+            $lines[] = "ملاحظات   :".($order->note ?? '—');
+       // $lines[] = "المندوب: ".($order->shipper?->name ?? '—');
+        // $lines[] = "بواسطة: {$actorName}";
+        // $lines[] = 'الوقت: '.now()->timezone(config('app.timezone'))->format('d/m/Y H:i');
 
-        $this->sendGroupMessage(implode("\n", array_filter($lines)));
+        $targetGroupIds = null;
+        $mappingsString = Setting::getValue('whatsapp_group_client_mapping', '[]');
+        $mappings = json_decode($mappingsString, true) ?: [];
+
+        if (! empty($mappings)) {
+            $matchedGroups = [];
+            foreach ($mappings as $mapping) {
+                $groupId = $mapping['group_id'] ?? null;
+                $clientIds = $mapping['client_ids'] ?? [];
+                if ($groupId && in_array((int) $order->client_user_id, array_map('intval', $clientIds), true)) {
+                    $matchedGroups[] = $groupId;
+                }
+            }
+            $targetGroupIds = $matchedGroups;
+        }
+
+        $this->sendGroupMessage(implode("\n", array_filter($lines)), $targetGroupIds);
     }
 
     /**
@@ -127,6 +168,8 @@ class WhatsAppService
      */
     public function notifyWorkflowEvent(Model $model, string $action, array $oldValues = [], array $newValues = []): void
     {
+        return; // Disabled per user request (restricted to order status changes only)
+
         if (! $this->isEnabled() || ! $this->isSupportedWorkflowModel($model)) {
             return;
         }

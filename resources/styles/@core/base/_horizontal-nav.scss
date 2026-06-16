@@ -8,15 +8,15 @@
 .layout-horizontal-nav {
   @extend %nav;
 
-  // 👉 Icon styles
+  //    Icon styles
   .nav-item-icon {
     @extend %horizontal-nav-item-icon;
   }
 
-  // 👉 Common styles for nav group & nav link
+  //    Common styles for nav group & nav link
   .nav-link,
   .nav-group {
-    // 👉 Disabled nav items
+    //    Disabled nav items
     &.disabled {
       @extend %horizontal-nav-disabled;
     }
@@ -41,7 +41,7 @@
       @include vuetifyStates.states($active: false);
     }
 
-    // 👉 Top level nav link
+    //    Top level nav link
     &:not(.sub-item) {
       a {
         @extend %horizontal-nav-top-level-item;
@@ -52,7 +52,7 @@
       }
     }
 
-    // 👉 Sub link
+    //    Sub link
     &.sub-item {
       a {
         &.router-link-active {
@@ -93,7 +93,7 @@
       }
     }
 
-    // 👉 Top level group
+    //    Top level group
     &:not(.sub-item) {
       > .popper-triggerer {
         position: relative;
@@ -141,7 +141,7 @@
       }
     }
 
-    // 👉 Sub group
+    //    Sub group
     &.sub-item {
       &.active {
         @include mixins.selected-states("> .popper-triggerer > .nav-group-label::before");

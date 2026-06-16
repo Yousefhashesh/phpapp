@@ -22,7 +22,7 @@ const isNavDrawerOpen = ref(false)
 
 const configStore = useConfigStore()
 
-// 👉 Primary Color
+//    Primary Color
 const vuetifyTheme = useTheme()
 
 const colors: { main: string; darken: string }[] = [
@@ -59,7 +59,7 @@ const setPrimaryColor = useDebounceFn((color: { main: string; darken: string }) 
   useStorage<string | null>(namespaceConfig('initial-loader-color'), null).value = color.main
 }, 100)
 
-// 👉 Mode
+//    Mode
 const themeMode = computed(() => {
   return [
     {
@@ -80,7 +80,7 @@ const themeMode = computed(() => {
   ]
 })
 
-// 👉 Skin
+//    Skin
 const themeSkin = computed(() => {
   return [
     {
@@ -96,7 +96,7 @@ const themeSkin = computed(() => {
   ]
 })
 
-// 👉 Layout
+//    Layout
 const currentLayout = ref<'vertical' | 'collapsed' | 'horizontal'>(configStore.isVerticalNavCollapsed ? 'collapsed' : configStore.appContentLayoutNav)
 
 const layouts = computed(() => {
@@ -140,7 +140,7 @@ watch(
   },
 )
 
-// 👉 Content Width
+//    Content Width
 const contentWidth = computed(() => {
   return [
     {
@@ -156,7 +156,7 @@ const contentWidth = computed(() => {
   ]
 })
 
-// 👉 Direction
+//    Direction
 const currentDir = ref(configStore.isAppRTL ? 'rtl' : 'ltr')
 
 const direction = computed(() => {
@@ -286,7 +286,7 @@ const resetCustomizer = async () => {
       :scrim="false"
       class="app-customizer"
     >
-      <!-- 👉 Header -->
+      <!--    Header -->
       <div class="customizer-heading d-flex align-center justify-space-between">
         <div>
           <h6 class="text-h6">
@@ -347,7 +347,7 @@ const resetCustomizer = async () => {
           title="Theming"
           :divider="false"
         >
-          <!-- 👉 Primary Color -->
+          <!--    Primary Color -->
           <div class="d-flex flex-column gap-2">
             <h6 class="text-h6">
               Primary Color
@@ -419,7 +419,7 @@ const resetCustomizer = async () => {
             </div>
           </div>
 
-          <!-- 👉 Theme -->
+          <!--    Theme -->
           <div class="d-flex flex-column gap-2">
             <h6 class="text-h6">
               Theme
@@ -451,7 +451,7 @@ const resetCustomizer = async () => {
             </CustomRadiosWithImage>
           </div>
 
-          <!-- 👉 Skin -->
+          <!--    Skin -->
           <div class="d-flex flex-column gap-2">
             <h6 class="text-h6">
               Skins
@@ -469,7 +469,7 @@ const resetCustomizer = async () => {
             </CustomRadiosWithImage>
           </div>
 
-          <!-- 👉 Semi Dark -->
+          <!--    Semi Dark -->
           <div
             class="align-center justify-space-between"
             :class="vuetifyTheme.global.name.value === 'light' && configStore.appContentLayoutNav === AppContentLayoutNav.Vertical ? 'd-flex' : 'd-none'"
@@ -494,7 +494,7 @@ const resetCustomizer = async () => {
 
         <!-- SECTION LAYOUT -->
         <CustomizerSection title="Layout">
-          <!-- 👉 Layouts -->
+          <!--    Layouts -->
           <div class="d-flex flex-column gap-2">
             <h6 class="text-base font-weight-medium">
               Layout
@@ -512,7 +512,7 @@ const resetCustomizer = async () => {
             </CustomRadiosWithImage>
           </div>
 
-          <!-- 👉 Content Width -->
+          <!--    Content Width -->
           <div class="d-flex flex-column gap-2">
             <h6 class="text-base font-weight-medium">
               Content
@@ -530,7 +530,7 @@ const resetCustomizer = async () => {
             </CustomRadiosWithImage>
           </div>
 
-          <!-- 👉 Direction -->
+          <!--    Direction -->
           <div class="d-flex flex-column gap-2">
             <h6 class="text-base font-weight-medium">
               Direction

@@ -27,7 +27,7 @@ import { useSettingsStore } from '@core/stores/settings'
 const settingsStore = useSettingsStore(store)
 await settingsStore.fetchSettings()
 
-// 👉 Override window.alert to use our global notification system
+//    Override window.alert to use our global notification system
 import { useNotificationStore } from '@/stores/useNotificationStore'
 const notificationStore = useNotificationStore(store)
 
