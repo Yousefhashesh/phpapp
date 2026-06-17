@@ -36,7 +36,7 @@ const headers = [
   { title: "Date", key: "collection_date" },
   { title: "Orders", key: "number_of_orders" },
   { title: "Total", key: "total_amount" },
-  { title: "Fees", key: "fees" },
+  { title: "Fees", key: "shipping_fee" },
   { title: "Shipper Fees", key: "shipper_fees" },
   { title: "Net", key: "net_amount" },
   { title: "Status", key: "status" },
@@ -512,8 +512,8 @@ const exportCollections = async () => {
             >{{ item.total_amount }} EGP</span
           >
         </template>
-        <template #item.fees="{ item }: { item: any }">
-          <span class="text-error">{{ item.fees }} EGP</span>
+        <template #item.shipping_fee="{ item }: { item: any }">
+          <span class="text-error">{{ item.shipping_fee }} EGP</span>
         </template>
         <template #item.shipper_fees="{ item }: { item: any }">
           <span class="text-base font-weight-medium"

@@ -57,6 +57,7 @@ class ShipperCollectionController extends Controller
             ->forUserRole()
             ->with(['shipper:id,name'])
             ->withCount('orders')
+            ->withsum('orders as total_order_fees', 'shipping_fee')
             ->when(
                 $statuses !== [],
                 fn (Builder $query): Builder => $query->whereIn('status', $statuses)
@@ -82,15 +83,26 @@ class ShipperCollectionController extends Controller
             ->paginate($request->input('per_page', 100))
             ->appends($request->query());
 
-        return response()->json([
-            'data' => collect($collections->items())->map(fn (ShipperCollection $collection): array => $this->filterVisibleColumns($request, $collection, $precomputedPermissions))->values(),
-            'meta' => [
-                'current_page' => $collections->currentPage(),
-                'per_page' => $collections->perPage(),
-                'last_page' => $collections->lastPage(),
-                'total' => $collections->total(),
-            ],
-        ]);
+      
+
+return response()->json([
+    'data' => collect($collections->items())->map(function (ShipperCollection $collection) use ($request, $precomputedPermissions): array {
+        // 1. بنجيب الداتا المفلترة العادية بناءً على صلاحيات العواميد
+        $filteredData = $this->filterVisibleColumns($request, $collection, $precomputedPermissions);
+        
+        // 2. بنحقن القيمة الجاية من الـ withSum يدوياً جوة الـ array الناتج
+        // وبنسميها الاسم اللي الفرونت إند مستنيه (مثلاً shipping_fee)
+        $filteredData['shipping_fee'] = (float) ($collection->total_order_fees ?? 0);
+        
+        return $filteredData;
+    })->values(),
+    'meta' => [
+        'current_page' => $collections->currentPage(),
+        'per_page' => $collections->perPage(),
+        'last_page' => $collections->lastPage(),
+        'total' => $collections->total(),
+    ],
+]);
     }
 
     public function export(Request $request)
