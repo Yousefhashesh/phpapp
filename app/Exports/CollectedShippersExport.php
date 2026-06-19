@@ -59,6 +59,10 @@ class CollectedShippersExport implements FromCollection, WithHeadings, WithMappi
                     'order_amount' => $order->total_amount,
                     'shipping_fee' => $order->shipping_fee,
                     'cod' => $order->cod_amount,
+                    'order_status' => $order->status,
+                    'approval_status' => $order->approval_status,
+                    'order_note' => $order->order_note,
+                    'latest_status_note' => $order->latest_status_note,
                 ]);
             }
         }
@@ -80,6 +84,10 @@ class CollectedShippersExport implements FromCollection, WithHeadings, WithMappi
             'قيمة الأوردر',
             'شحن',
             'صافي التحصيل',
+            'حالة الأوردر',
+            'الحالة',
+            'ملاحظات الأوردر',
+            'ملاحظات الحالة',
         ];
     }
 
@@ -97,6 +105,10 @@ class CollectedShippersExport implements FromCollection, WithHeadings, WithMappi
             $row->order_amount,
             $row->shipping_fee,
             $row->cod,
+            $row->order_status,
+            $row->approval_status,
+            $row->order_note,
+            $row->latest_status_note,
         ];
     }
 

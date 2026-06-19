@@ -7,10 +7,9 @@
 export {}
 declare global {
   const $api: typeof import('./resources/ts/utils/api')['$api']
+  const ACTIVE_DELIVERY_STATUSES: typeof import('./resources/ts/utils/orderFinancialLock')['ACTIVE_DELIVERY_STATUSES']
   const COOKIE_MAX_AGE_1_YEAR: typeof import('./resources/ts/utils/constants')['COOKIE_MAX_AGE_1_YEAR']
   const EffectScope: typeof import('vue')['EffectScope']
-  const PRINT_PER_PAGE_OPTIONS: typeof import('./resources/ts/utils/printLayout')['PRINT_PER_PAGE_OPTIONS']
-  const PRINT_SIZE_OPTIONS: typeof import('./resources/ts/utils/printLayout')['PRINT_SIZE_OPTIONS']
   const acceptHMRUpdate: typeof import('pinia')['acceptHMRUpdate']
   const alphaDashValidator: typeof import('./resources/ts/@core/utils/validators')['alphaDashValidator']
   const alphaValidator: typeof import('./resources/ts/@core/utils/validators')['alphaValidator']
@@ -80,11 +79,13 @@ declare global {
   const inject: typeof import('vue')['inject']
   const injectLocal: typeof import('@vueuse/core')['injectLocal']
   const integerValidator: typeof import('./resources/ts/@core/utils/validators')['integerValidator']
+  const isActiveDeliveryStatus: typeof import('./resources/ts/utils/orderFinancialLock')['isActiveDeliveryStatus']
   const isDefined: typeof import('@vueuse/core')['isDefined']
   const isEmpty: typeof import('./resources/ts/@core/utils/helpers')['isEmpty']
   const isEmptyArray: typeof import('./resources/ts/@core/utils/helpers')['isEmptyArray']
   const isNullOrUndefined: typeof import('./resources/ts/@core/utils/helpers')['isNullOrUndefined']
   const isObject: typeof import('./resources/ts/@core/utils/helpers')['isObject']
+  const isOrderFinanciallyLocked: typeof import('./resources/ts/utils/orderFinancialLock')['isOrderFinanciallyLocked']
   const isProxy: typeof import('vue')['isProxy']
   const isReactive: typeof import('vue')['isReactive']
   const isReadonly: typeof import('vue')['isReadonly']
@@ -128,12 +129,10 @@ declare global {
   const onWatcherCleanup: typeof import('vue')['onWatcherCleanup']
   const orderRecordFromLabelPayload: typeof import('./resources/ts/utils/printDocuments')['orderRecordFromLabelPayload']
   const paginationMeta: typeof import('./resources/ts/utils/paginationMeta')['paginationMeta']
-  const parsePrintPerPage: typeof import('./resources/ts/utils/printLayout')['parsePrintPerPage']
-  const parsePrintSheetSize: typeof import('./resources/ts/utils/printLayout')['parsePrintSheetSize']
   const passwordValidator: typeof import('./resources/ts/@core/utils/validators')['passwordValidator']
+  const patchListItem: typeof import('./resources/ts/composables/usePatchListItem')['patchListItem']
   const pausableWatch: typeof import('@vueuse/core')['pausableWatch']
   const prefixWithPlus: typeof import('./resources/ts/@core/utils/formatters')['prefixWithPlus']
-  const printLayoutClasses: typeof import('./resources/ts/utils/printLayout')['printLayoutClasses']
   const provide: typeof import('vue')['provide']
   const provideLocal: typeof import('@vueuse/core')['provideLocal']
   const qrCodeImageUrl: typeof import('./resources/ts/utils/printDocuments')['qrCodeImageUrl']
@@ -263,6 +262,7 @@ declare global {
   const useFetch: typeof import('@vueuse/core')['useFetch']
   const useFileDialog: typeof import('@vueuse/core')['useFileDialog']
   const useFileSystemAccess: typeof import('@vueuse/core')['useFileSystemAccess']
+  const useFlashHighlight: typeof import('./resources/ts/composables/useFlashHighlight')['useFlashHighlight']
   const useFloor: typeof import('@vueuse/math')['useFloor']
   const useFocus: typeof import('@vueuse/core')['useFocus']
   const useFocusWithin: typeof import('@vueuse/core')['useFocusWithin']
@@ -318,7 +318,6 @@ declare global {
   const usePreferredLanguages: typeof import('@vueuse/core')['usePreferredLanguages']
   const usePreferredReducedMotion: typeof import('@vueuse/core')['usePreferredReducedMotion']
   const usePrevious: typeof import('@vueuse/core')['usePrevious']
-  const usePrintLayout: typeof import('./resources/ts/composables/usePrintLayout')['usePrintLayout']
   const useProjection: typeof import('@vueuse/math')['useProjection']
   const useRafFn: typeof import('@vueuse/core')['useRafFn']
   const useRefHistory: typeof import('@vueuse/core')['useRefHistory']
@@ -409,6 +408,7 @@ declare module 'vue' {
   interface GlobalComponents {}
   interface ComponentCustomProperties {
     readonly $api: UnwrapRef<typeof import('./resources/ts/utils/api')['$api']>
+    readonly ACTIVE_DELIVERY_STATUSES: UnwrapRef<typeof import('./resources/ts/utils/orderFinancialLock')['ACTIVE_DELIVERY_STATUSES']>
     readonly COOKIE_MAX_AGE_1_YEAR: UnwrapRef<typeof import('./resources/ts/utils/constants')['COOKIE_MAX_AGE_1_YEAR']>
     readonly EffectScope: UnwrapRef<typeof import('vue')['EffectScope']>
     readonly acceptHMRUpdate: UnwrapRef<typeof import('pinia')['acceptHMRUpdate']>
@@ -480,11 +480,13 @@ declare module 'vue' {
     readonly inject: UnwrapRef<typeof import('vue')['inject']>
     readonly injectLocal: UnwrapRef<typeof import('@vueuse/core')['injectLocal']>
     readonly integerValidator: UnwrapRef<typeof import('./resources/ts/@core/utils/validators')['integerValidator']>
+    readonly isActiveDeliveryStatus: UnwrapRef<typeof import('./resources/ts/utils/orderFinancialLock')['isActiveDeliveryStatus']>
     readonly isDefined: UnwrapRef<typeof import('@vueuse/core')['isDefined']>
     readonly isEmpty: UnwrapRef<typeof import('./resources/ts/@core/utils/helpers')['isEmpty']>
     readonly isEmptyArray: UnwrapRef<typeof import('./resources/ts/@core/utils/helpers')['isEmptyArray']>
     readonly isNullOrUndefined: UnwrapRef<typeof import('./resources/ts/@core/utils/helpers')['isNullOrUndefined']>
     readonly isObject: UnwrapRef<typeof import('./resources/ts/@core/utils/helpers')['isObject']>
+    readonly isOrderFinanciallyLocked: UnwrapRef<typeof import('./resources/ts/utils/orderFinancialLock')['isOrderFinanciallyLocked']>
     readonly isProxy: UnwrapRef<typeof import('vue')['isProxy']>
     readonly isReactive: UnwrapRef<typeof import('vue')['isReactive']>
     readonly isReadonly: UnwrapRef<typeof import('vue')['isReadonly']>
@@ -529,6 +531,7 @@ declare module 'vue' {
     readonly orderRecordFromLabelPayload: UnwrapRef<typeof import('./resources/ts/utils/printDocuments')['orderRecordFromLabelPayload']>
     readonly paginationMeta: UnwrapRef<typeof import('./resources/ts/utils/paginationMeta')['paginationMeta']>
     readonly passwordValidator: UnwrapRef<typeof import('./resources/ts/@core/utils/validators')['passwordValidator']>
+    readonly patchListItem: UnwrapRef<typeof import('./resources/ts/composables/usePatchListItem')['patchListItem']>
     readonly pausableWatch: UnwrapRef<typeof import('@vueuse/core')['pausableWatch']>
     readonly prefixWithPlus: UnwrapRef<typeof import('./resources/ts/@core/utils/formatters')['prefixWithPlus']>
     readonly provide: UnwrapRef<typeof import('vue')['provide']>
@@ -660,6 +663,7 @@ declare module 'vue' {
     readonly useFetch: UnwrapRef<typeof import('@vueuse/core')['useFetch']>
     readonly useFileDialog: UnwrapRef<typeof import('@vueuse/core')['useFileDialog']>
     readonly useFileSystemAccess: UnwrapRef<typeof import('@vueuse/core')['useFileSystemAccess']>
+    readonly useFlashHighlight: UnwrapRef<typeof import('./resources/ts/composables/useFlashHighlight')['useFlashHighlight']>
     readonly useFloor: UnwrapRef<typeof import('@vueuse/math')['useFloor']>
     readonly useFocus: UnwrapRef<typeof import('@vueuse/core')['useFocus']>
     readonly useFocusWithin: UnwrapRef<typeof import('@vueuse/core')['useFocusWithin']>

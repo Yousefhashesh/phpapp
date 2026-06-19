@@ -58,7 +58,26 @@ class ClientSettlementController extends Controller
 
         $settlements = ClientSettlement::query()
             ->forUserRole()
+            ->select('client_settlements.*')
             ->with(['client:id,name'])
+            ->selectSub(
+                ClientSettlementOrder::query()
+                    ->selectRaw('COALESCE(SUM(order_amount), 0)')
+                    ->whereColumn('client_settlement_id', 'client_settlements.id'),
+                'pivot_total_amount'
+            )
+            ->selectSub(
+                ClientSettlementOrder::query()
+                    ->selectRaw('COALESCE(SUM(fee), 0)')
+                    ->whereColumn('client_settlement_id', 'client_settlements.id'),
+                'pivot_fees'
+            )
+            ->selectSub(
+                ClientSettlementOrder::query()
+                    ->selectRaw('COALESCE(SUM(net_amount), 0)')
+                    ->whereColumn('client_settlement_id', 'client_settlements.id'),
+                'pivot_net_amount'
+            )
             ->when(
                 $statuses !== [],
                 fn (Builder $query): Builder => $query->whereIn('status', $statuses)
@@ -94,7 +113,16 @@ class ClientSettlementController extends Controller
             ->appends($request->query());
 
         return response()->json([
-            'data' => collect($settlements->items())->map(fn (ClientSettlement $settlement): array => $this->filterVisibleColumns($request, $settlement, $precomputedPermissions))->values(),
+            'data' => collect($settlements->items())->map(function (ClientSettlement $settlement) use ($request, $precomputedPermissions): array {
+                $filteredData = $this->filterVisibleColumns($request, $settlement, $precomputedPermissions);
+
+                // إرجاع القيم المحدثة من جدول الـ Pivot بدلاً من القيم الثابتة في جدول التسويات
+                $filteredData['total_amount'] = (float) ($settlement->pivot_total_amount ?? 0);
+                $filteredData['fees']         = (float) ($settlement->pivot_fees ?? 0);
+                $filteredData['net_amount']   = (float) ($settlement->pivot_net_amount ?? 0);
+
+                return $filteredData;
+            })->values(),
             'meta' => [
                 'current_page' => $settlements->currentPage(),
                 'per_page' => $settlements->perPage(),
@@ -167,7 +195,7 @@ class ClientSettlementController extends Controller
             'end_date' => ['nullable', 'date'],
             'governorate_id' => ['nullable', 'integer', 'exists:governorates,id'],
             'city_id' => ['nullable', 'integer', 'exists:cities,id'],
-            'status' => ['nullable', Rule::in(self::EARLY_SETTLEMENT_ORDER_STATUSES)],
+            'status' => ['nullable', Rule::in(self::ELIGIBLE_ORDER_STATUSES)],
         ]);
 
         $clientUserId = $this->settlementClientUserId($request, $validated['client_user_id'] ?? null);
@@ -375,7 +403,9 @@ class ClientSettlementController extends Controller
         $data = $request->validate([
             'client_user_id' => ['sometimes', 'required', 'exists:users,id'],
             'settlement_date' => ['sometimes', 'required', 'date'],
+            'total_amount' => ['sometimes', 'nullable', 'numeric', 'min:0'],
             'fees' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+            'net_amount' => ['sometimes', 'nullable', 'numeric', 'min:0'],
             'status' => ['sometimes', 'required', Rule::in(['PENDING', 'COMPLETED', 'CANCELLED'])],
         ]);
 
@@ -730,17 +760,6 @@ class ClientSettlementController extends Controller
 
     private function eligibleOrderStatusesForClient(?int $clientUserId = null): array
     {
-        if ($clientUserId !== null) {
-            $canSettleEarly = Client::query()
-                ->where('user_id', $clientUserId)
-                ->where('can_settle_before_shipper_collected', true)
-                ->exists();
-
-            if ($canSettleEarly) {
-                return self::EARLY_SETTLEMENT_ORDER_STATUSES;
-            }
-        }
-
         return self::ELIGIBLE_ORDER_STATUSES;
     }
 

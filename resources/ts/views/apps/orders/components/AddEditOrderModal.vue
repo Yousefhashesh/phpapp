@@ -229,9 +229,10 @@ const onFormSubmit = async () => {
   }
 
   try {
-    const { error } = await useApi(url)[method.toLowerCase() as 'put' | 'post'](payload).json()
+    const { data, error } = await useApi(url)[method.toLowerCase() as 'put' | 'post'](payload).json()
     if (!error.value) {
-      emit('orderSaved')
+      const savedId = props.orderId ?? data.value?.data?.id ?? null
+      emit('orderSaved', savedId)
       emit('update:isDialogVisible', false)
     }
   } catch (e) { console.error('Form Submit Error:', e) }

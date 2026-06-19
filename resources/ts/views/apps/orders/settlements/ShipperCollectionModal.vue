@@ -111,7 +111,7 @@ const onSubmit = async () => {
     if (!isShipperUser.value)
       payload.shipper_user_id = formData.value.shipper_user_id
 
-    const { error } = await useApi('/shipper-collections').post(payload).json()
+    const { data, error } = await useApi('/shipper-collections').post(payload).json()
 
     if (error.value) {
       if ((error.value as any).data?.errors) {
@@ -120,7 +120,7 @@ const onSubmit = async () => {
         errorMessages.value = [(error.value as any).message || 'Failed to create collection']
       }
     } else {
-      emit('collectionCreated')
+      emit('collectionCreated', data.value?.data)
       emit('update:isDialogVisible', false)
       formData.value.shipper_user_id = null
       selectedOrders.value = []

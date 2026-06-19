@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -179,6 +180,56 @@ class Order extends Model
     public function clientReturns()
     {
         return $this->belongsToMany(ClientReturn::class, 'client_return_orders');
+    }
+
+    public function isFinanciallyLockedForStatusRevert(): bool
+    {
+        if (
+            $this->is_shipper_collected
+            || $this->is_client_settled
+            || $this->is_shipper_returned
+            || $this->is_client_returned
+        ) {
+            return true;
+        }
+
+        return $this->shipperCollections()->where('shipper_collections.status', '!=', 'CANCELLED')->exists()
+            || $this->clientSettlements()->where('client_settlements.status', '!=', 'CANCELLED')->exists()
+            || $this->shipperReturns()->where('shipper_returns.status', '!=', 'CANCELLED')->exists()
+            || $this->clientReturns()->where('client_returns.status', '!=', 'CANCELLED')->exists();
+    }
+
+    /**
+     * UNDELIVERED (immediate warehouse return) OR DELIVERED with has_return flag.
+     */
+    public function scopeEligibleForShipperReturn(Builder $query): Builder
+    {
+        return $query
+            ->where(function (Builder $q): void {
+                $q->where('status', 'UNDELIVERED')
+                    ->orWhere(function (Builder $sub): void {
+                        $sub->where('status', 'DELIVERED')->where('has_return', true);
+                    });
+            })
+            ->whereDoesntHave('shipperReturns', function ($q): void {
+                $q->where('shipper_returns.status', '!=', 'CANCELLED');
+            })
+            ->where('is_shipper_returned', false);
+    }
+
+    /**
+     * Delivered/undelivered orders flagged for return, already returned by shipper, not yet returned to client.
+     */
+    public function scopeEligibleForClientReturn(Builder $query): Builder
+    {
+        return $query
+            ->whereIn('status', ['DELIVERED', 'UNDELIVERED'])
+            ->where('has_return', true)
+            ->where('is_shipper_returned', true)
+            ->whereDoesntHave('clientReturns', function ($q): void {
+                $q->where('client_returns.status', '!=', 'CANCELLED');
+            })
+            ->where('is_client_returned', false);
     }
 
 }

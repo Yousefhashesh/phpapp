@@ -157,6 +157,7 @@ class ClientReturnController extends Controller
                 'company_amount',
                 'cod_amount',
                 'status',
+                'has_return',
                 'client_user_id',
                 'shipper_user_id',
                 'is_shipper_returned',
@@ -165,12 +166,7 @@ class ClientReturnController extends Controller
                 'client_returned_at',
             ])
             ->with(['client:id,name,phone', 'shipper:id,name'])
-            ->whereIn('status', self::ELIGIBLE_ORDER_STATUSES)
-            ->where('is_shipper_returned', true)
-            ->whereDoesntHave('clientReturns', function ($q) {
-                $q->where('client_returns.status', '!=', 'CANCELLED');
-            })
-            ->where('is_client_returned', false)
+            ->eligibleForClientReturn()
             ->when(
                 $validated['client_user_id'] ?? null,
                 fn (Builder $query, int|string $clientUserId): Builder => $query->where('client_user_id', $clientUserId)
@@ -460,17 +456,13 @@ class ClientReturnController extends Controller
                 'id',
                 'client_user_id',
                 'status',
+                'has_return',
                 'is_shipper_returned',
                 'is_client_returned',
             ])
             ->where('client_user_id', $clientUserId)
             ->whereIn('id', $orderIds)
-            ->whereIn('status', self::ELIGIBLE_ORDER_STATUSES)
-            ->where('is_shipper_returned', true)
-            ->whereDoesntHave('clientReturns', function ($q) {
-                $q->where('client_returns.status', '!=', 'CANCELLED');
-            })
-            ->where('is_client_returned', false)
+            ->eligibleForClientReturn()
             ->get();
 
         if ($orders->count() !== count($orderIds)) {
@@ -619,17 +611,10 @@ class ClientReturnController extends Controller
         $returnDate = $data['return_date'] ?? now()->toDateString();
         $creatorId = $request->user()->id;
 
-        // Fetch eligible orders
+        // Fetch eligible orders: has_return flag + already returned by shipper
         $orders = Order::query()
             ->whereIn('id', $orderIds)
-            ->whereIn('status', self::ELIGIBLE_ORDER_STATUSES)
-            // Client return needs has_return=true AND already returned by shipper
-            ->where('has_return', true)
-            ->where('is_shipper_returned', true)
-            ->whereDoesntHave('clientReturns', function ($q) {
-                $q->where('client_returns.status', '!=', 'CANCELLED');
-            })
-            ->where('is_client_returned', false)
+            ->eligibleForClientReturn()
             ->get();
 
         if ($orders->isEmpty()) {

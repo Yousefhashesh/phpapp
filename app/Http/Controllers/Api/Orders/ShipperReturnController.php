@@ -204,18 +204,15 @@ class ShipperReturnController extends Controller
                 'company_amount',
                 'cod_amount',
                 'status',
+                'has_return',
                 'shipper_user_id',
                 'client_user_id',
                 'is_shipper_returned',
                 'shipper_returned_at',
             ])
             ->with(['shipper:id,name', 'client:id,name,phone'])
-            ->whereIn('status', self::ELIGIBLE_ORDER_STATUSES)
+            ->eligibleForShipperReturn()
             ->whereNotNull('shipper_user_id')
-            ->whereDoesntHave('shipperReturns', function ($q) {
-                $q->where('shipper_returns.status', '!=', 'CANCELLED');
-            })
-            ->where('is_shipper_returned', false)
             ->when(
                 $validated['shipper_user_id'] ?? null,
                 fn (Builder $query, int|string $shipperUserId): Builder => $query->where('shipper_user_id', $shipperUserId)
@@ -520,15 +517,12 @@ class ShipperReturnController extends Controller
                 'id',
                 'shipper_user_id',
                 'status',
+                'has_return',
                 'is_shipper_returned',
             ])
             ->where('shipper_user_id', $shipperUserId)
             ->whereIn('id', $orderIds)
-            ->whereIn('status', self::ELIGIBLE_ORDER_STATUSES)
-            ->whereDoesntHave('shipperReturns', function ($q) {
-                $q->where('shipper_returns.status', '!=', 'CANCELLED');
-            })
-            ->where('is_shipper_returned', false)
+            ->eligibleForShipperReturn()
             ->get();
 
         if ($orders->count() !== count($orderIds)) {
@@ -675,21 +669,10 @@ class ShipperReturnController extends Controller
         $returnDate = $data['return_date'] ?? now()->toDateString();
         $creatorId = $request->user()->id;
 
-        // Fetch eligible orders
+        // Fetch eligible orders: UNDELIVERED OR (DELIVERED with has_return=true)
         $orders = Order::query()
             ->whereIn('id', $orderIds)
-            // Add specific logic requested by user:
-            // Shipper return must be UNDELIVERED OR (DELIVERED with has_return=true)
-            ->where(function (Builder $query) {
-                $query->where('status', 'UNDELIVERED')
-                    ->orWhere(function (Builder $q) {
-                        $q->where('status', 'DELIVERED')->where('has_return', true);
-                    });
-            })
-            ->whereDoesntHave('shipperReturns', function ($q) {
-                $q->where('shipper_returns.status', '!=', 'CANCELLED');
-            })
-            ->where('is_shipper_returned', false)
+            ->eligibleForShipperReturn()
             ->get();
 
         if ($orders->isEmpty()) {

@@ -61,7 +61,7 @@ definePage({
         <VAvatar v-else rounded size="60" color="primary" variant="tonal">
           <VIcon icon="tabler-truck" size="40" />
         </VAvatar>
-        
+
         <div>
           <h2 class="text-h4 font-weight-bold mb-0">
             {{ settings?.site_identity?.site_name || 'لوجو الشركة' }}
@@ -73,8 +73,9 @@ definePage({
       </div>
       <div class="text-left">
         <h3 class="text-h3 font-weight-black mb-1 text-primary">{{ getTitle() }}</h3>
-        <div class="text-subtitle-1">رقم الكشف: <span class="font-weight-bold">#{{ data.id }}</span></div>
-        <div class="text-subtitle-2">التاريخ: {{ data.collection_date || data.return_date || data.settlement_date || '-' }}</div>
+        <div class="text-secondary">رقم الكشف: <span class="font-weight-bold">#{{ data.id }}</span></div>
+        <div class="text-primary">التاريخ: {{ data.collection_date || data.return_date || data.settlement_date || '-'
+        }}</div>
       </div>
     </div>
 
@@ -83,21 +84,21 @@ definePage({
     <!-- Summary Info -->
     <div class="mb-6 pa-4 bg-light rounded d-flex justify-space-between align-center">
       <div v-if="data.shipper" class="d-flex flex-column">
-        <span class="text-subtitle-2 text-secondary">المندوب:</span>
+        <span class="text-primary text-secondary">المندوب:</span>
         <span class="text-h6 font-weight-bold">{{ data.shipper.name }}</span>
       </div>
       <div v-if="data.client" class="d-flex flex-column">
-        <span class="text-subtitle-2 text-secondary">العميل:</span>
+        <span class="text-primary text-secondary">العميل:</span>
         <span class="text-h6 font-weight-bold">{{ data.client.name }}</span>
       </div>
       <div class="text-left">
-        <span class="text-subtitle-2 text-secondary">حالة الكشف:</span>
+        <span class="text-primary text-secondary">حالة الكشف:</span>
         <VChip size="small" color="primary" variant="elevated" class="ms-2">{{ data.status }}</VChip>
       </div>
     </div>
 
     <!-- Tables based on Type -->
-    
+
     <!-- 1. Client Return (مرتجعات عميل) -->
     <div v-if="type === 'client-return'">
       <table class="w-100 border-collapse mb-6 print-table">
@@ -149,16 +150,29 @@ definePage({
             <td>{{ order.status === 'UNDELIVERED' ? 'نعم' : 'لا' }}</td>
             <td>{{ Number(order.total_amount).toFixed(2) }}</td>
             <td>{{ Number(order.shipping_fee || 0).toFixed(2) }}</td>
-            <td>{{ Number((order.pivot?.net_amount || order.total_amount - (order.shipping_fee || 0))).toFixed(2) }}</td>
+            <td>{{ Number((order.pivot?.net_amount || order.total_amount - (order.shipping_fee || 0))).toFixed(2) }}
+            </td>
           </tr>
         </tbody>
       </table>
       <div class="summary-box pa-4 rounded-lg bg-light border">
         <VRow>
-          <VCol cols="3"><div class="text-subtitle-2">إجمالي عدد الطلبات:</div><div class="text-h6 font-weight-bold">{{ data.number_of_orders }}</div></VCol>
-          <VCol cols="3"><div class="text-subtitle-2">إجمالي التحصيل:</div><div class="text-h6 font-weight-bold">{{ Number(data.total_amount).toFixed(2) }} ج.م</div></VCol>
-          <VCol cols="3"><div class="text-subtitle-2">إجمالي مصاريف الشركة:</div><div class="text-h6 font-weight-bold text-error">{{ Number(data.fees).toFixed(2) }} ج.م</div></VCol>
-          <VCol cols="3"><div class="text-subtitle-2">الصافي المستحق للعميل:</div><div class="text-h4 font-weight-black text-success">{{ Number(data.net_amount).toFixed(2) }} ج.م</div></VCol>
+          <VCol cols="3">
+            <div class="text-primary">إجمالي عدد الطلبات:</div>
+            <div class="text-h6 font-weight-bold">{{ data.number_of_orders }}</div>
+          </VCol>
+          <VCol cols="3">
+            <div class="text-primary">إجمالي التحصيل:</div>
+            <div class="text-h6 font-weight-bold">{{ Number(data.total_amount).toFixed(2) }} ج.م</div>
+          </VCol>
+          <VCol cols="3">
+            <div class="text-primary">إجمالي مصاريف الشركة:</div>
+            <div class="text-h6 font-weight-bold text-error">{{ Number(data.fees).toFixed(2) }} ج.م</div>
+          </VCol>
+          <VCol cols="3">
+            <div class="text-primary">الصافي المستحق للعميل:</div>
+            <div class="text-h4 font-weight-black text-success">{{ Number(data.net_amount).toFixed(2) }} ج.م</div>
+          </VCol>
         </VRow>
       </div>
     </div>
@@ -173,30 +187,70 @@ definePage({
             <th>رقم الهاتف</th>
             <th>مرتجع</th>
             <th>المبلغ</th>
-            <th>عمولة المندوب</th>
+            <th>صافي التحصيل</th>
           </tr>
         </thead>
+
         <tbody>
           <tr v-for="order in data.orders" :key="order.id">
             <td>{{ order.code }}</td>
             <td>{{ order.receiver_name }}</td>
             <td>{{ order.phone }}</td>
             <td>{{ order.status === 'UNDELIVERED' ? 'نعم' : 'لا' }}</td>
-            <td>{{ Number(order.total_amount || 0).toFixed(2) }}</td>
-            <td>{{ Number(order.total_amount - (order.company_amount || 0)).toFixed(2) }}</td>
+
+            <td>
+              {{ Number(order.total_amount || 0).toFixed(2) }}
+            </td>
+
+            <td>
+            <td>
+              {{
+                Number(
+                  Number(order.total_amount || 0)
+                  - Number(order.pivot?.shipper_fee || 0)
+              ).toFixed(2)
+              }}
+            </td>
+            </td>
+
           </tr>
         </tbody>
       </table>
+
       <div class="summary-box pa-4 rounded-lg bg-light border">
         <VRow>
-          <VCol cols="3"><div class="text-subtitle-2">إجمالي عدد الطلبات:</div><div class="text-h6 font-weight-bold">{{ data.number_of_orders }}</div></VCol>
-          <VCol cols="3"><div class="text-subtitle-2">إجمالي التحصيل:</div><div class="text-h6 font-weight-bold">{{ Number(data.total_amount).toFixed(2) }} ج.م</div></VCol>
-          <VCol cols="3"><div class="text-subtitle-2">إجمالي عمولة المندوب:</div><div class="text-h6 font-weight-bold">{{ Number(data.total_amount - data.net_amount).toFixed(2) }} ج.م</div></VCol>
-          <VCol cols="3"><div class="text-subtitle-2">الصافي المستلم من المندوب:</div><div class="text-h4 font-weight-black text-primary">{{ Number(data.net_amount).toFixed(2) }} ج.م</div></VCol>
+          <VCol cols="4">
+            <div class="text-primary font-weight-black">
+              إجمالي عدد الطلبات:
+            </div>
+
+            <div class="text-h4 font-weight-black text-primary">
+              {{ data.number_of_orders }}
+            </div>
+          </VCol>
+
+          <VCol cols="4">
+            <div class="text-primary font-weight-black">
+              إجمالي عمولة المندوب:
+            </div>
+
+            <div class="text-h4 font-weight-black text-primary">
+              {{ Number(data.shipper_fees || 0).toFixed(2) }} ج.م
+            </div>
+          </VCol>
+
+          <VCol cols="4">
+            <div class="text-primary font-weight-black">
+              الصافي المستلم من المندوب:
+            </div>
+
+            <div class="text-h4 font-weight-black text-primary">
+              {{ Number(data.net_amount || 0).toFixed(2) }} ج.م
+            </div>
+          </VCol>
         </VRow>
       </div>
     </div>
-
     <!-- 4. Shipper Returns (مرتجعات مندوب) -->
     <div v-if="type === 'return'">
       <table class="w-100 border-collapse mb-6 print-table">
@@ -228,9 +282,12 @@ definePage({
 
     <!-- Footer Seal/Signature -->
     <div class="mt-12 d-flex justify-space-between align-end">
-      <div class="text-center" style="min-inline-size: 150px; border-top: 1px solid #000; padding-top: 8px;">إمضاء المستلم</div>
-      <div class="text-center" style="min-inline-size: 150px; border-top: 1px solid #000; padding-top: 8px;">ختم الشركة</div>
-      <div class="text-center" style="min-inline-size: 150px; border-top: 1px solid #000; padding-top: 8px;">إمضاء المسؤول</div>
+      <div class="text-center" style="min-inline-size: 150px; border-top: 1px solid #000; padding-top: 8px;">إمضاء
+        المستلم</div>
+      <div class="text-center" style="min-inline-size: 150px; border-top: 1px solid #000; padding-top: 8px;">ختم الشركة
+      </div>
+      <div class="text-center" style="min-inline-size: 150px; border-top: 1px solid #000; padding-top: 8px;">إمضاء
+        المسؤول</div>
     </div>
 
     <!-- Footer Info -->
@@ -248,7 +305,7 @@ definePage({
   background: white;
   min-height: 290mm;
   font-family: 'Cairo', sans-serif;
-  color: #333;
+  color: #000000;
 }
 
 .print-table {
@@ -275,16 +332,35 @@ definePage({
 }
 
 @media print {
-  .pa-6 { padding: 0 !important; }
-  .invoice-print { margin: 0; padding: 10mm !important; box-shadow: none !important; }
-  @page { margin: 8mm; size: A4; }
-  .v-avatar, .v-btn, .v-divider {
+  .pa-6 {
+    padding: 0 !important;
+  }
+
+  .invoice-print {
+    margin: 0;
+    padding: 10mm !important;
+    box-shadow: none !important;
+  }
+
+  @page {
+    margin: 8mm;
+    size: A4;
+  }
+
+  .v-avatar,
+  .v-btn,
+  .v-divider {
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
   }
 }
 
 /* RTL Helpers */
-dir[rtl] .text-left { text-align: left !important; }
-dir[rtl] .text-right { text-align: right !important; }
+dir[rtl] .text-left {
+  text-align: left !important;
+}
+
+dir[rtl] .text-right {
+  text-align: right !important;
+}
 </style>

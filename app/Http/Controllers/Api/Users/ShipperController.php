@@ -54,11 +54,7 @@ class ShipperController extends Controller
                 });
             } elseif ($type === 'return') {
                 $query->whereHas('orders', function ($q) {
-                    $q->whereIn('status', \App\Http\Controllers\Api\Orders\ShipperReturnController::ELIGIBLE_ORDER_STATUSES)
-                      ->whereDoesntHave('shipperReturns', function ($sq) {
-                          $sq->where('shipper_returns.status', '!=', 'CANCELLED');
-                      })
-                      ->where('is_shipper_returned', false);
+                    $q->eligibleForShipperReturn();
                 });
             }
         }

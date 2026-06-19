@@ -93,6 +93,12 @@ class ShipperAppController extends Controller
         $note = $validated['note'] ?? null;
         $totalAmount = $validated['total_amount'] ?? null;
 
+        if ($status === 'HOLD' && $order->isFinanciallyLockedForStatusRevert()) {
+            throw ValidationException::withMessages([
+                'status' => ['Cannot change order status to HOLD while it is in an active shipper collection, client settlement, or return. Cancel/unlock the financial document first.'],
+            ]);
+        }
+
         // Validation for reasons
         if (in_array($status, ['HOLD', 'UNDELIVERED']) && !$reasonId && !$note) {
             throw ValidationException::withMessages([

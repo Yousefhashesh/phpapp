@@ -4,7 +4,7 @@ namespace Tests\Unit;
 
 use App\Support\Services\FinancialFormulaService;
 use Illuminate\Validation\ValidationException;
-use PHPUnit\Framework\TestCase;
+use Tests\TestCase;
 
 class FinancialFormulaServiceTest extends TestCase
 {

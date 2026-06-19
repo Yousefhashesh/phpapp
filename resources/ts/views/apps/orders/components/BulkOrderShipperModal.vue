@@ -56,9 +56,9 @@ const onSubmit = async () => {
   }
 
   try {
-    const { error } = await useApi('/orders/bulk-change-shipper').patch(payload).json()
+    const { data, error } = await useApi('/orders/bulk-change-shipper').patch(payload).json()
     if (!error.value) {
-      emit('shipperUpdated')
+      emit('shipperUpdated', data.value?.updated_order_ids || [])
       emit('update:isDialogVisible', false)
     } else {
       notify('خطأ أثناء التحديث: ' + (error.value?.message || 'يرجى المحاولة مرة أخرى'), 'error')

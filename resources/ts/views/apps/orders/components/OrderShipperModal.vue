@@ -71,7 +71,7 @@ const onSubmit = async () => {
           errorMessages.value = ['Update failed: Validation error or missing information.']
        }
     } else {
-      emit('shipperUpdated')
+      emit('shipperUpdated', props.order?.id)
       emit('update:isDialogVisible', false)
     }
   } catch (e: any) {

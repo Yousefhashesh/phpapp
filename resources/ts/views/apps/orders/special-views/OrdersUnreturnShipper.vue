@@ -1,5 +1,5 @@
 <template>
-  <OrderList :fixed-filters="{ status: 'UNDELIVERED', is_shipper_returned: 0 }" title="أوردرات Unreturn Shipper" />
+  <OrderList :fixed-filters="{ shipper_return_pending: 1 }" title="أوردرات Unreturn Shipper" />
 </template>
 
 <script setup lang="ts">

@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import FinancialOrdersDetailTable from '@/views/apps/orders/components/FinancialOrdersDetailTable.vue'
 import { useApi } from "@/composables/useApi";
+import { useFlashHighlight } from '@/composables/useFlashHighlight'
 import { createUrl } from "@core/composable/createUrl";
 import { avatarText } from "@core/utils/formatters";
 import { useRoute } from 'vue-router';
 
 const route = useRoute()
+const router = useRouter()
+const { flash, isFlashing } = useFlashHighlight()
 
 const searchQuery = ref("");
 const selectedStatus = ref<string | null>(null);
@@ -132,38 +134,84 @@ const approvalColors: any = {
 };
 
 //    Actions
-const isDetailsDialogVisible = ref(false);
 const selectedCollection = ref<any>(null);
 const isCreateDialogVisible = ref(false);
 const isApprovalDialogVisible = ref(false);
 const approvalAction = ref<"approve" | "reject">("approve");
 const approvalNote = ref("");
 
-const viewDetails = async (id: number) => {
-  const { data } = await useApi<any>(`/shipper-collections/${id}`).get().json();
-  if (data.value) {
-    selectedCollection.value = data.value;
-    isDetailsDialogVisible.value = true;
+const isEditDialogVisible = ref(false);
+const editCollectionData = ref({
+  id: null as number | null,
+  collection_date: "",
+  total_amount: 0,
+  shipper_fees: 0,
+  net_amount: 0,
+});
+const isSavingEdit = ref(false);
+const editErrorMessages = ref<string[]>([]);
+
+const openEditDialog = (item: any) => {
+  editCollectionData.value = {
+    id: item.id,
+    collection_date: item.collection_date ? new Date(item.collection_date).toISOString().substr(0, 10) : "",
+    total_amount: Number(item.total_amount) || 0,
+    shipper_fees: Number(item.shipper_fees) || 0,
+    net_amount: Number(item.net_amount) || 0,
+  };
+  editErrorMessages.value = [];
+  isEditDialogVisible.value = true;
+};
+
+const patchCollection = (id: number, patch: Record<string, any>) => {
+  const list = collectionsData.value?.data
+  if (!list)
+    return
+
+  const index = list.findIndex((c: any) => c.id === id)
+  if (index === -1)
+    return
+
+  list[index] = { ...list[index], ...patch }
+  flash(`collection-${id}`)
+}
+
+const submitEdit = async () => {
+  if (!editCollectionData.value.id) return;
+  
+  isSavingEdit.value = true;
+  editErrorMessages.value = [];
+  
+  try {
+    const { data, error } = await useApi(`/shipper-collections/${editCollectionData.value.id}`)
+      .patch({
+        collection_date: editCollectionData.value.collection_date,
+        total_amount: editCollectionData.value.total_amount,
+        shipper_fees: editCollectionData.value.shipper_fees,
+        net_amount: editCollectionData.value.net_amount,
+      })
+      .json();
+      
+    if (error.value) {
+      if ((error.value as any).data?.errors) {
+        editErrorMessages.value = Object.values((error.value as any).data.errors).flat() as string[];
+      } else {
+        editErrorMessages.value = [(error.value as any).message || 'Failed to update collection'];
+      }
+    } else {
+      isEditDialogVisible.value = false;
+      patchCollection(editCollectionData.value.id, data.value?.data || editCollectionData.value);
+    }
+  } catch (e: any) {
+    editErrorMessages.value = ['An error occurred while saving.'];
+  } finally {
+    isSavingEdit.value = false;
   }
 };
 
-const collectionFinancialSummary = computed(() => {
-  const orders = selectedCollection.value?.orders ?? [];
-  let totalAmount = 0;
-  let totalFees = 0;
-  let totalCod = 0;
-
-  for (const order of orders) {
-    totalAmount += Number(order.total_amount) || 0;
-    totalFees += Number(order.shipping_fee) || 0;
-    totalCod += Number(order.cod_amount) || 0;
-  }
-
-  return { totalAmount, totalFees, totalCod };
-});
-
-const formatSummaryMoney = (value: number) =>
-  `EGP ${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const viewDetails = (id: number) => {
+  router.push({ name: 'apps-orders-shipper-collections-id', params: { id } })
+};
 
 const openApprovalDialog = (id: number, action: "approve" | "reject") => {
   selectedCollection.value = collections.value.find((c: any) => c.id === id);
@@ -176,26 +224,30 @@ const submitApproval = async () => {
   if (!selectedCollection.value) return;
 
   processingAction.value = true;
-  const url = `/shipper-collections/${selectedCollection.value.id}/${approvalAction.value}`;
-  const { error } = await useApi(url)
+  const collectionId = selectedCollection.value.id;
+  const url = `/shipper-collections/${collectionId}/${approvalAction.value}`;
+  const { data, error } = await useApi(url)
     .patch({ approval_note: approvalNote.value })
     .json();
 
   if (!error.value) {
     isApprovalDialogVisible.value = false;
-    fetchCollections();
+    patchCollection(collectionId, {
+      approval_status: approvalAction.value === 'approve' ? 'APPROVED' : 'REJECTED',
+      ...(data.value?.data || {}),
+    });
   }
   processingAction.value = false;
 };
 
 const updateStatus = async (id: number, status: string) => {
   processingAction.value = true;
-  const { error } = await useApi(`/shipper-collections/${id}`)
+  const { data, error } = await useApi(`/shipper-collections/${id}`)
     .patch({ status })
     .json();
 
   if (!error.value) {
-    fetchCollections();
+    patchCollection(id, { status, ...(data.value?.data || {}) });
   }
   processingAction.value = false;
 };
@@ -231,40 +283,31 @@ onMounted(() => {
 });
 
 import ShipperCollectionModal from "./ShipperCollectionModal.vue";
-const removeOrderFromCollection = async (orderId: number) => {
-  if (!selectedCollection.value) return;
-  
-  processingAction.value = true;
-  const { data, error } = await useApi(`/shipper-collections/${selectedCollection.value.id}/orders/${orderId}`)
-    .delete()
-    .json();
 
-  if (!error.value) {
-    if (data.value?.deleted) {
-      isDetailsDialogVisible.value = false;
-      selectedCollection.value = null;
-    } else {
-      selectedCollection.value = data.value?.data || data.value;
-    }
-    fetchCollections();
+const onCollectionCreated = (collection?: any) => {
+  if (collection && collectionsData.value?.data) {
+    collectionsData.value.data.unshift(collection)
+    flash(`collection-${collection.id}`)
+  } else {
+    fetchCollections()
   }
-  processingAction.value = false;
-};
+}
 
 const bulkUpdateStatus = async (status: string) => {
   if (selectedIds.value.length === 0) return;
 
   processingAction.value = true;
+  const ids = selectedIds.value.map((i: any) => i.id || i);
   const { error } = await useApi("/shipper-collections/bulk-status")
     .patch({
-      ids: selectedIds.value.map((i: any) => i.id || i),
+      ids,
       status: status,
     })
     .json();
 
   if (!error.value) {
+    ids.forEach((id: number) => patchCollection(id, { status }));
     selectedIds.value = [];
-    fetchCollections();
   }
   processingAction.value = false;
 };
@@ -349,7 +392,7 @@ const exportCollections = async () => {
 
     <ShipperCollectionModal
       v-model:is-dialog-visible="isCreateDialogVisible"
-      @collection-created="fetchCollections"
+      @collection-created="onCollectionCreated"
     />
     <VCard>
       <VCardText class="d-flex flex-wrap gap-4 align-center">
@@ -478,6 +521,9 @@ const exportCollections = async () => {
         :headers="activeHeaders"
         :loading="isFetching"
         class="text-no-wrap"
+        :row-props="({ item }: { item: any }) => ({
+          class: isFlashing(`collection-${item.id}`) ? 'row-flash' : '',
+        })"
         loading-text="تحميل البيانات..."
       >
         <!-- ID -->
@@ -564,6 +610,17 @@ const exportCollections = async () => {
               <VTooltip activator="parent">View Details</VTooltip>
             </IconBtn>
 
+            <!-- Edit Details -->
+            <IconBtn
+              v-if="can('shipper-collection.update' as any, 'all' as any)"
+              size="small"
+              color="secondary"
+              @click="openEditDialog(item)"
+            >
+              <VIcon icon="tabler-edit" />
+              <VTooltip activator="parent">Edit Collection</VTooltip>
+            </IconBtn>
+
             <!-- Print Invoice -->
             <VBtn
               v-if="can('shipper-collection.view' as any, 'all' as any)"
@@ -633,102 +690,6 @@ const exportCollections = async () => {
       </VDataTable>
     </VCard>
 
-    <!-- Details Dialog -->
-    <VDialog
-      v-model="isDetailsDialogVisible"
-      max-width="1200"
-      scrollable
-    >
-      <VCard :title="`Collection Details - #${selectedCollection?.id}`">
-        <VCardText>
-          <VRow>
-            <VCol
-              cols="12"
-              md="4"
-            >
-              <div class="text-subtitle-2 mb-1">
-                Total Amount
-              </div>
-              <div class="text-body-1 font-weight-bold">
-                {{ formatSummaryMoney(collectionFinancialSummary.totalAmount) }}
-              </div>
-            </VCol>
-
-            <VCol
-              cols="12"
-              md="4"
-            >
-              <div class="text-subtitle-2 mb-1">
-                Total Fees
-              </div>
-              <div class="text-body-1 font-weight-bold text-error">
-                {{ formatSummaryMoney(collectionFinancialSummary.totalFees) }}
-              </div>
-            </VCol>
-
-            <VCol
-              cols="12"
-              md="4"
-            >
-              <div class="text-subtitle-2 mb-1">
-                COD Amount
-              </div>
-              <div class="text-body-1 font-weight-bold text-success">
-                {{ formatSummaryMoney(collectionFinancialSummary.totalCod) }}
-              </div>
-            </VCol>
-          </VRow>
-
-          <VDivider class="my-4" />
-
-          <div class="text-h6 mb-2">
-            Orders
-          </div>
-          <FinancialOrdersDetailTable
-            :orders="selectedCollection?.orders || []"
-            :show-actions="can('shipper-collection.update' as any, 'all' as any)"
-            :processing-action="processingAction"
-            @remove="removeOrderFromCollection"
-          />
-        </VCardText>
-        <VCardActions>
-          <VBtn
-            v-if="
-              selectedCollection?.approval_status &&
-              selectedCollection.approval_status.toString().toUpperCase() ===
-                'PENDING'
-            "
-            color="success"
-            variant="tonal"
-            prepend-icon="tabler-check"
-            @click="openApprovalDialog(selectedCollection.id, 'approve')"
-          >
-            Approve
-          </VBtn>
-          <VBtn
-            v-if="
-              selectedCollection?.approval_status &&
-              selectedCollection.approval_status.toString().toUpperCase() ===
-                'PENDING'
-            "
-            color="error"
-            variant="tonal"
-            prepend-icon="tabler-x"
-            @click="openApprovalDialog(selectedCollection.id, 'reject')"
-          >
-            Reject
-          </VBtn>
-          <VSpacer />
-          <VBtn
-            color="secondary"
-            variant="tonal"
-            @click="isDetailsDialogVisible = false"
-            >Close</VBtn
-          >
-        </VCardActions>
-      </VCard>
-    </VDialog>
-
     <!-- Approval Dialog -->
     <VDialog v-model="isApprovalDialogVisible" max-width="500">
       <VCard
@@ -769,5 +730,90 @@ const exportCollections = async () => {
         </VCardActions>
       </VCard>
     </VDialog>
+
+    <!-- Edit Dialog -->
+    <VDialog v-model="isEditDialogVisible" max-width="600">
+      <VCard title="Edit Shipper Collection">
+        <VCardText>
+          <VAlert
+            v-if="editErrorMessages.length"
+            type="error"
+            variant="tonal"
+            closable
+            class="mb-4"
+          >
+            <ul class="ms-4 mb-0">
+              <li v-for="msg in editErrorMessages" :key="msg">
+                {{ msg }}
+              </li>
+            </ul>
+          </VAlert>
+
+          <VRow>
+            <VCol cols="12" md="6">
+              <AppTextField
+                v-model="editCollectionData.collection_date"
+                label="Collection Date"
+                type="date"
+              />
+            </VCol>
+            <VCol cols="12" md="6">
+              <AppTextField
+                v-model.number="editCollectionData.total_amount"
+                label="Total Amount"
+                type="number"
+              />
+            </VCol>
+            <VCol cols="12" md="6">
+              <AppTextField
+                v-model.number="editCollectionData.shipper_fees"
+                label="Shipper Fees"
+                type="number"
+              />
+            </VCol>
+            <VCol cols="12" md="6">
+              <AppTextField
+                v-model.number="editCollectionData.net_amount"
+                label="Net Amount"
+                type="number"
+              />
+            </VCol>
+          </VRow>
+        </VCardText>
+        <VCardActions>
+          <VSpacer />
+          <VBtn
+            color="secondary"
+            variant="tonal"
+            @click="isEditDialogVisible = false"
+          >
+            Cancel
+          </VBtn>
+          <VBtn
+            color="primary"
+            :loading="isSavingEdit"
+            @click="submitEdit"
+          >
+            Save Changes
+          </VBtn>
+        </VCardActions>
+      </VCard>
+    </VDialog>
   </section>
 </template>
+
+<style scoped>
+:deep(.row-flash) {
+  animation: row-flash 2s ease-out;
+}
+
+@keyframes row-flash {
+  0% {
+    box-shadow: inset 0 0 0 2px rgb(var(--v-theme-primary));
+  }
+
+  100% {
+    box-shadow: inset 0 0 0 0 transparent;
+  }
+}
+</style>

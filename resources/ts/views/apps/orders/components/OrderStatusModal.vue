@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { useApi } from '@/composables/useApi';
+import { useApi } from '@/composables/useApi'
+import { isOrderFinanciallyLocked } from '@/utils/orderFinancialLock'
 
 interface Props {
   isDialogVisible: boolean
@@ -61,6 +62,22 @@ const showEditAmount = computed(() => {
     .some((r: any) => r && r.is_edit_amount)
 })
 
+const statusItems = computed(() => {
+  const items = [
+    { title: 'Out for delivery', value: 'OUT_FOR_DELIVERY' },
+    { title: 'Delivered', value: 'DELIVERED' },
+    { title: 'On hold', value: 'HOLD' },
+    { title: 'Undelivered', value: 'UNDELIVERED' },
+  ]
+
+  if (isOrderFinanciallyLocked(props.order))
+    return items.filter(item => !['OUT_FOR_DELIVERY', 'HOLD'].includes(item.value))
+
+  return items
+})
+
+const isFinanciallyLocked = computed(() => isOrderFinanciallyLocked(props.order))
+
 watch(() => props.order, (newVal) => {
   if (newVal) {
     statusData.value = {
@@ -101,7 +118,7 @@ const onSubmit = async () => {
   const { error } = await useApi(`/orders/${props.order.id}/change-status`).patch(payload).json()
 
   if (!error.value) {
-    emit('statusUpdated')
+    emit('statusUpdated', props.order?.id)
     emit('update:isDialogVisible', false)
   }
 }
@@ -115,17 +132,20 @@ const onSubmit = async () => {
   >
     <VCard title="Update Order Status">
       <VCardText v-if="props.order">
+        <VAlert
+          v-if="isFinanciallyLocked"
+          type="warning"
+          variant="tonal"
+          class="mb-4"
+        >
+          لا يمكن تغيير الحالة إلى OUT_FOR_DELIVERY أو HOLD لأن الأوردر مرتبط بتحصيل أو تسوية أو مرتجع نشط. قم بإلغاء/فك القيد أولاً.
+        </VAlert>
         <VRow>
           <VCol cols="12">
             <AppSelect
               v-model="statusData.status"
               label="Select Status"
-              :items="[
-                { title: 'Out for delivery', value: 'OUT_FOR_DELIVERY' },
-                { title: 'Delivered', value: 'DELIVERED' },
-                { title: 'On hold', value: 'HOLD' },
-                { title: 'Undelivered', value: 'UNDELIVERED' },
-              ]"
+              :items="statusItems"
               @update:model-value="statusData.refused_reason_ids = []"
             />
           </VCol>

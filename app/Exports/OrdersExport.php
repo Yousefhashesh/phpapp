@@ -69,13 +69,15 @@ class OrdersExport implements FromQuery, WithHeadings, WithMapping, WithStyles, 
             'المحافظة',
             'المنطقة',
             'العنوان',
-            'المطالبة (ج.م)',
+            ' الاجمالي (ج.م)',
             'حساب الشحن',
             'الصافي',
             'المندوب',
+            'حالة الأوردر',
             'الحالة',
+            'ملاحظات الأوردر',
+            'ملاحظات الحالة',
             'تاريخ التسجيل',
-            'ملاحظات',
         ];
     }
 
@@ -92,7 +94,14 @@ class OrdersExport implements FromQuery, WithHeadings, WithMapping, WithStyles, 
             $order->city?->name,
             $order->address,
             $order->total_amount,
+            $order->shipping_fee,
+            $order->company_amount,
+            $order->shipper?->name,
+            $order->status,
+            $order->approval_status,
             $order->order_note,
+            $order->latest_status_note,
+            $order->registered_at?->format('Y-m-d H:i'),
         ];
     }
 

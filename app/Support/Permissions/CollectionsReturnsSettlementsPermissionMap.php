@@ -41,6 +41,8 @@ class CollectionsReturnsSettlementsPermissionMap
         'collection_date' => 'shipper-collection.column.collection_date.edit',
         'shipper_fees' => 'shipper-collection.column.shipper_fees.edit',
         'status' => 'shipper-collection.column.status.edit',
+        'total_amount' => null,
+        'net_amount' => null,
     ];
 
     // =========== Shipper Returns ===========
@@ -119,6 +121,8 @@ class CollectionsReturnsSettlementsPermissionMap
         'settlement_date' => 'client-settlement.column.settlement_date.edit',
         'fees' => 'client-settlement.column.fees.edit',
         'status' => 'client-settlement.column.status.edit',
+        'total_amount' => null,
+        'net_amount' => null,
     ];
 
     // =========== Client Returns ===========

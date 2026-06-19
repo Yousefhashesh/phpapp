@@ -25,7 +25,102 @@ class ShipperCollectionController extends Controller
     use ChecksWorkingHours;
     public const ELIGIBLE_ORDER_STATUSES = ['DELIVERED', 'UNDELIVERED'];
 
-    public function index(Request $request): JsonResponse
+//     public function index(Request $request): JsonResponse
+//     {
+//         $this->authorizePermission($request, 'shipper-collection.page');
+//         $this->authorizePermission($request, 'shipper-collection.view');
+
+//         $validated = $request->validate([
+//             'status' => ['nullable', Rule::in(['PENDING', 'COMPLETED', 'CANCELLED'])],
+//             'statuses' => ['nullable', 'array'],
+//             'statuses.*' => [Rule::in(['PENDING', 'COMPLETED', 'CANCELLED'])],
+//             'approval_status' => ['nullable', Rule::in(['PENDING', 'APPROVED', 'REJECTED'])],
+//             'shipper_user_id' => ['nullable', 'exists:users,id'],
+//             'search' => ['nullable', 'string'],
+//         ]);
+
+//         $statuses = [];
+//         if (! empty($validated['status'])) {
+//             $statuses[] = $validated['status'];
+//         }
+
+//         if (is_array($validated['statuses'] ?? null)) {
+//             $statuses = array_values(array_unique([
+//                 ...$statuses,
+//                 ...$validated['statuses'],
+//             ]));
+//         }
+
+//         $precomputedPermissions = $this->precomputeVisibleColumns($request);
+
+//         $collections = ShipperCollection::query()
+//             ->forUserRole()
+//             ->select('shipper_collections.*')
+//             ->with(['shipper:id,name'])
+//             ->withCount('orders')
+//             ->withSum('orders as total_order_fees', 'shipping_fee')
+//             ->selectSub(
+//                 ShipperCollectionOrder::query()
+//                     ->selectRaw('COALESCE(SUM(shipper_fee), 0)')
+//                     ->whereColumn('shipper_collection_id', 'shipper_collections.id'),
+//                 'pivot_shipper_fees'
+//             )
+//             ->when(
+//                 $statuses !== [],
+//                 fn (Builder $query): Builder => $query->whereIn('status', $statuses)
+//             )
+//             ->when(
+//                 $validated['approval_status'] ?? null,
+//                 fn (Builder $query, string $status): Builder => $query->where('approval_status', $status)
+//             )
+//             ->when(
+//                 $validated['shipper_user_id'] ?? null,
+//                 fn (Builder $query, int|string $id): Builder => $query->where('shipper_user_id', $id)
+//             )
+//             ->when(
+//                 $validated['q'] ?? $validated['search'] ?? null,
+//                 function (Builder $query, string $search): Builder {
+//                     return $query->where(function (Builder $builder) use ($search): void {
+//                         $builder->where('id', 'like', "%{$search}%")
+//                             ->orWhereHas('shipper', fn ($q) => $q->where('name', 'like', "%{$search}%"))
+//                             ->orWhereHas('orders', fn ($q) => $q->where('code', 'like', "%{$search}%")->orWhere('external_code', 'like', "%{$search}%"));
+//                     });
+//                 }
+//             )
+//             ->orderByDesc('id')
+//             ->paginate($request->input('per_page', 100))
+//             ->appends($request->query());
+
+      
+
+// return response()->json([
+//     'data' => collect($collections->items())->map(function (ShipperCollection $collection) use ($request, $precomputedPermissions): array {
+      
+//         $filteredData = $this->filterVisibleColumns($request, $collection, $precomputedPermissions);
+
+//         $filteredData['shipping_fee'] = (float) ($collection->total_order_fees ?? 0);
+
+//         if (array_key_exists('shipper_fees', $filteredData)) {
+//             $filteredData['shipper_fees'] = $this->resolveShipperFees($collection);
+//         }
+
+//         if (array_key_exists('fees', $filteredData)) {
+//             $filteredData['fees'] = $filteredData['shipper_fees'] ?? $this->resolveShipperFees($collection);
+//         }
+
+//         return $filteredData;
+//     })->values(),
+//     'meta' => [
+//         'current_page' => $collections->currentPage(),
+//         'per_page' => $collections->perPage(),
+//         'last_page' => $collections->lastPage(),
+//         'total' => $collections->total(),
+//     ],
+// ]);
+//     }
+
+
+public function index(Request $request): JsonResponse
     {
         $this->authorizePermission($request, 'shipper-collection.page');
         $this->authorizePermission($request, 'shipper-collection.view');
@@ -55,9 +150,12 @@ class ShipperCollectionController extends Controller
 
         $collections = ShipperCollection::query()
             ->forUserRole()
+            ->select('shipper_collections.*')
             ->with(['shipper:id,name'])
             ->withCount('orders')
-            ->withsum('orders as total_order_fees', 'shipping_fee')
+            ->withSum('orders as current_total_amount', 'total_amount')
+            ->withSum('orders as total_order_fees', 'shipping_fee')
+            ->withSum('orders as current_shipper_fees', 'commission_amount')
             ->when(
                 $statuses !== [],
                 fn (Builder $query): Builder => $query->whereIn('status', $statuses)
@@ -80,29 +178,51 @@ class ShipperCollectionController extends Controller
                     });
                 }
             )
+            ->orderByDesc('id')
             ->paginate($request->input('per_page', 100))
             ->appends($request->query());
 
-      
+        return response()->json([
+            'data' => collect($collections->items())->map(function (ShipperCollection $collection) use ($request, $precomputedPermissions): array {
+                $filteredData = $this->filterVisibleColumns($request, $collection, $precomputedPermissions);
+                $totals = $this->calculateCollectionTotalsFromOrderSums(
+                    (float) ($collection->current_total_amount ?? 0),
+                    (float) ($collection->current_shipper_fees ?? 0),
+                    (int) ($collection->orders_count ?? 0),
+                );
 
-return response()->json([
-    'data' => collect($collections->items())->map(function (ShipperCollection $collection) use ($request, $precomputedPermissions): array {
-        // 1. بنجيب الداتا المفلترة العادية بناءً على صلاحيات العواميد
-        $filteredData = $this->filterVisibleColumns($request, $collection, $precomputedPermissions);
-        
-        // 2. بنحقن القيمة الجاية من الـ withSum يدوياً جوة الـ array الناتج
-        // وبنسميها الاسم اللي الفرونت إند مستنيه (مثلاً shipping_fee)
-        $filteredData['shipping_fee'] = (float) ($collection->total_order_fees ?? 0);
-        
-        return $filteredData;
-    })->values(),
-    'meta' => [
-        'current_page' => $collections->currentPage(),
-        'per_page' => $collections->perPage(),
-        'last_page' => $collections->lastPage(),
-        'total' => $collections->total(),
-    ],
-]);
+                if (array_key_exists('total_amount', $filteredData)) {
+                    $filteredData['total_amount'] = $totals['total_amount'];
+                }
+
+                if (array_key_exists('shipper_fees', $filteredData)) {
+                    $filteredData['shipper_fees'] = $totals['shipper_fees'];
+                }
+
+                if (array_key_exists('net_amount', $filteredData)) {
+                    $filteredData['net_amount'] = $totals['net_amount'];
+                }
+
+                if (array_key_exists('number_of_orders', $filteredData)) {
+                    $filteredData['number_of_orders'] = $totals['number_of_orders'];
+                }
+
+                // shipping_fee column is computed via withSum, not stored in the table
+                $filteredData['shipping_fee'] = (float) ($collection->total_order_fees ?? 0);
+
+                if (array_key_exists('fees', $filteredData)) {
+                    $filteredData['fees'] = $totals['shipper_fees'];
+                }
+
+                return $filteredData;
+            })->values(),
+            'meta' => [
+                'current_page' => $collections->currentPage(),
+                'per_page'     => $collections->perPage(),
+                'last_page'    => $collections->lastPage(),
+                'total'        => $collections->total(),
+            ],
+        ]);
     }
 
     public function export(Request $request)
@@ -125,7 +245,7 @@ return response()->json([
         $namePart = ($shippers->count() === 1) ? " - " . $shippers->first() : "";
 
         $date = now()->format('d-m-y');
-        $filename = "تحصيل شيبر{$namePart} - {$totalAmount} - {$date}.xlsx";
+        $filename = "تحصيل مندوب{$namePart} - {$totalAmount} - {$date}.xlsx";
 
         return Excel::download(new CollectedShippersExport($ids ? null : $query, $ids ? $ids : null), $filename);
     }
@@ -249,8 +369,10 @@ return response()->json([
         $orders = $this->resolveEligibleCollectionOrders($data['shipper_user_id'], $orderIds);
 
         $totalAmount = $orders->sum('total_amount');
-        $totalShippingFees = $orders->sum('shipping_fee');
-        $netAmount = $orders->sum(fn (Order $o) => $this->resolveCollectionAmount($o));
+        $shipperFees = round((float) $orders->sum('commission_amount'), 2);
+        // net_amount = MAX(total_amount - shipper_fees, 0) على مستوى الكوليكشن
+        // وليس مجموع per-order لتجنب تشوه الحصر (clamping)
+        $netAmount = max((float) $totalAmount - $shipperFees, 0);
 
         $creatorId = $request->user()->id;
         $canApproveOnCreate = $request->user()?->can('shipper-collection.approve') ?? false;
@@ -260,7 +382,7 @@ return response()->json([
             'collection_date' => $data['collection_date'],
             'total_amount' => $totalAmount,
             'number_of_orders' => $orders->count(),
-            'shipper_fees' => round($totalAmount - $netAmount, 2),
+            'shipper_fees' => $shipperFees,
             'net_amount' => max($netAmount, 0),
             'status' => 'PENDING',
             'approval_status' => $canApproveOnCreate ? 'APPROVED' : 'PENDING',
@@ -298,7 +420,9 @@ return response()->json([
         $data = $request->validate([
             'shipper_user_id' => ['sometimes', 'required', 'exists:users,id'],
             'collection_date' => ['sometimes', 'required', 'date'],
+            'total_amount' => ['sometimes', 'nullable', 'numeric', 'min:0'],
             'shipper_fees' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+            'net_amount' => ['sometimes', 'nullable', 'numeric', 'min:0'],
             'status' => ['sometimes', 'required', Rule::in(['PENDING', 'COMPLETED', 'CANCELLED'])],
         ]);
 
@@ -336,50 +460,23 @@ return response()->json([
     {
         $this->authorizePermission($request, 'shipper-collection.approve');
 
-        try {
-            $data = $request->validate([
-                'shipper_user_id' => ['required', 'exists:users,id'],
-                // collection_date is optional, will be set to today if not provided
-                'collection_date' => ['nullable', 'date'],
-                'order_ids' => ['required', 'array', 'min:1'],
-                'order_ids.*' => ['integer', 'distinct', 'exists:orders,id'],
-            ]);
+        $data = $request->validate([
+            'approval_note' => ['nullable', 'string'],
+        ]);
 
-            // If collection_date is not provided, set it to today
-            if (empty($data['collection_date'])) {
-                $data['collection_date'] = now()->toDateString();
-            }
+        $shipperCollection->update([
+            'approval_status' => 'APPROVED',
+            'approved_by' => $request->user()->id,
+            'approved_at' => now(),
+            'rejected_by' => null,
+            'rejected_at' => null,
+            'approval_note' => $data['approval_note'] ?? null,
+        ]);
 
-            $orderIds = array_values(array_unique($data['order_ids']));
-            $orders = $this->resolveEligibleCollectionOrders($data['shipper_user_id'], $orderIds);
-
-            $totalAmount = $orders->sum('total_amount');
-            $netAmount = $orders->sum(fn (Order $o) => $this->resolveCollectionAmount($o));
-
-            $creatorId = $request->user()->id;
-            $canApproveOnCreate = $request->user()?->can('shipper-collection.approve') ?? false;
-
-            $collectionData = [
-                'shipper_user_id' => $data['shipper_user_id'],
-                'collection_date' => $data['collection_date'],
-                'total_amount' => $totalAmount,
-                'number_of_orders' => $orders->count(),
-                'shipper_fees' => round($totalAmount - $netAmount, 2),
-                'net_amount' => max($netAmount, 0),
-                'status' => 'PENDING',
-                'approval_status' => $canApproveOnCreate ? 'APPROVED' : 'PENDING',
-                'created_by' => $creatorId,
-                'approved_by' => $canApproveOnCreate ? $creatorId : null,
-                'approved_at' => $canApproveOnCreate ? now() : null,
-            ];
-        } catch (ValidationException $e) {
-            return response()->json([
-                'message' => 'Validation error',
-                'errors' => $e->errors(),
-            ], 422);
-        }
-
-        // تم حذف الكود الزائد خارج الدالة
+        return response()->json([
+            'message' => 'Shipper collection approved successfully.',
+            'data' => $this->filterVisibleColumns($request, $shipperCollection->fresh()),
+        ]);
     }
 
     public function reject(Request $request, ShipperCollection $shipperCollection): JsonResponse
@@ -641,20 +738,14 @@ return response()->json([
                 ->first();
 
             if ($pivot) {
-                // Update collection totals
-                $shipperCollection->total_amount = max(0, $shipperCollection->total_amount - $pivot->order_amount);
-                $shipperCollection->shipper_fees = max(0, $shipperCollection->shipper_fees - $pivot->shipper_fee);
-                $shipperCollection->net_amount = max(0, $shipperCollection->net_amount - $pivot->net_amount);
-                $shipperCollection->number_of_orders = max(0, $shipperCollection->number_of_orders - 1);
-                
-                if ($shipperCollection->number_of_orders <= 0) {
-                    $shipperCollection->delete();
-                } else {
-                    $shipperCollection->save();
-                }
-
                 // Delete pivot record
                 $pivot->delete();
+
+                if (! $shipperCollection->orders()->exists()) {
+                    $shipperCollection->delete();
+                } else {
+                    $this->refreshStoredCollectionTotals($shipperCollection);
+                }
 
                 // Reset order state
                 $order->update([
@@ -696,6 +787,9 @@ return response()->json([
                 'orders.commission_amount',
                 'orders.company_amount',
                 'orders.cod_amount',
+                'orders.is_client_settled',
+                'orders.order_note',
+                'orders.latest_status_note',
             ]),
             'orders.client:id,name,phone',
         ]);
@@ -705,9 +799,112 @@ return response()->json([
     {
         $this->loadCollectionOrderRelations($shipperCollection);
 
+        $totals = $this->calculateCollectionTotalsFromOrders($shipperCollection->orders);
+
         $result = $this->filterVisibleColumns($request, $shipperCollection);
+
+        // Keep list and detail screens on the same live order-based calculation.
+        if (array_key_exists('total_amount', $result)) {
+            $result['total_amount'] = $totals['total_amount'];
+        }
+
+        if (array_key_exists('shipper_fees', $result)) {
+            $result['shipper_fees'] = $totals['shipper_fees'];
+        }
+
+        if (array_key_exists('net_amount', $result)) {
+            $result['net_amount'] = $totals['net_amount'];
+        }
+
+        if (array_key_exists('fees', $result)) {
+            $result['fees'] = $totals['shipper_fees'];
+        }
+
+        if (array_key_exists('number_of_orders', $result)) {
+            $result['number_of_orders'] = $totals['number_of_orders'];
+        }
+
         $result['orders'] = $shipperCollection->orders;
 
         return $result;
+    }
+
+    private function refreshStoredCollectionTotals(ShipperCollection $collection): void
+    {
+        $totals = $this->calculateCollectionTotalsFromQuery($collection);
+
+        $collection->update([
+            'total_amount' => $totals['total_amount'],
+            'shipper_fees' => $totals['shipper_fees'],
+            'net_amount' => $totals['net_amount'],
+            'number_of_orders' => $totals['number_of_orders'],
+        ]);
+    }
+
+    private function calculateCollectionTotalsFromQuery(ShipperCollection $collection): array
+    {
+        $totals = ShipperCollectionOrder::query()
+            ->join('orders', 'orders.id', '=', 'shipper_collection_orders.order_id')
+            ->where('shipper_collection_orders.shipper_collection_id', $collection->id)
+            ->selectRaw('COALESCE(SUM(orders.total_amount), 0) as total_amount, COALESCE(SUM(orders.commission_amount), 0) as shipper_fees, COUNT(orders.id) as number_of_orders')
+            ->first();
+
+        return $this->calculateCollectionTotalsFromOrderSums(
+            (float) ($totals->total_amount ?? 0),
+            (float) ($totals->shipper_fees ?? 0),
+            (int) ($totals->number_of_orders ?? 0),
+        );
+    }
+
+    private function calculateCollectionTotalsFromOrders(Collection $orders): array
+    {
+        return $this->calculateCollectionTotalsFromOrderSums(
+            (float) $orders->sum('total_amount'),
+            (float) $orders->sum('commission_amount'),
+            $orders->count(),
+        );
+    }
+
+    private function calculateCollectionTotalsFromOrderSums(float $totalAmount, float $shipperFees, int $numberOfOrders): array
+    {
+        $totalAmount = round($totalAmount, 2);
+        $shipperFees = round($shipperFees, 2);
+
+        return [
+            'total_amount' => $totalAmount,
+            'shipper_fees' => $shipperFees,
+            'net_amount' => round(max($totalAmount - $shipperFees, 0), 2),
+            'number_of_orders' => $numberOfOrders,
+        ];
+    }
+
+    private function resolveShipperFees(ShipperCollection $collection): float
+    {
+        if (isset($collection->pivot_shipper_fees)) {
+            return round((float) $collection->pivot_shipper_fees, 2);
+        }
+
+        // الـ pivot->shipper_fee قد تكون null عندما يُستخدم select() مخصص في الـ eager load
+        // لذلك نتحقق أولاً من الـ pivot إن كانت محمّلة وغير فارغة
+        if ($collection->relationLoaded('orders') && $collection->orders->isNotEmpty()) {
+            $fromPivot = (float) $collection->orders->sum(
+                fn (Order $order): float => (float) ($order->pivot?->shipper_fee ?? 0)
+            );
+
+            if ($fromPivot > 0) {
+                return round($fromPivot, 2);
+            }
+        }
+
+        // Fallback: قراءة مجموع shipper_fee مباشرة من جدول الـ pivot
+        $pivotSum = ShipperCollectionOrder::query()
+            ->where('shipper_collection_id', $collection->id)
+            ->sum('shipper_fee');
+
+        if ($pivotSum > 0) {
+            return round((float) $pivotSum, 2);
+        }
+
+        return round((float) ($collection->shipper_fees ?? 0), 2);
     }
 }

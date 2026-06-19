@@ -51,7 +51,7 @@ class ClientController extends Controller
         if ($request->filled('eligible_for')) {
             $type = $request->get('eligible_for');
             if ($type === 'settlement') {
-                $requireShipperCollectionFirst = true; // Default behavior
+                $requireShipperCollectionFirst = true;
                 $settingValue = \App\Models\Setting::query()->where('key', 'require_shipper_collection_first')->value('value');
                 if ($settingValue !== null) {
                     $normalized = strtolower(trim((string) $settingValue));
@@ -59,53 +59,36 @@ class ClientController extends Controller
                 }
 
                 $eligibleStatuses = \App\Http\Controllers\Api\Orders\ClientSettlementController::ELIGIBLE_ORDER_STATUSES;
-                $earlySettlementStatuses = \App\Http\Controllers\Api\Orders\ClientSettlementController::EARLY_SETTLEMENT_ORDER_STATUSES;
 
-                $query->where(function ($q) use ($eligibleStatuses, $earlySettlementStatuses) {
-                    $q->whereHas('orders', function ($sq) use ($eligibleStatuses) {
-                        $sq->whereIn('status', $eligibleStatuses)
-                            ->whereDoesntHave('clientSettlements', function ($ssq) {
-                                $ssq->where('client_settlements.status', '!=', 'CANCELLED');
-                            })
-                            ->where('is_client_settled', false);
-                    })->orWhere(function ($sq) use ($earlySettlementStatuses) {
-                        $sq->where('can_settle_before_shipper_collected', true)
-                            ->whereHas('orders', function ($ssq) use ($earlySettlementStatuses) {
-                                $ssq->whereIn('status', $earlySettlementStatuses)
-                                    ->whereDoesntHave('clientSettlements', function ($sssQ) {
-                                        $sssQ->where('client_settlements.status', '!=', 'CANCELLED');
-                                    })
-                                    ->where('is_client_settled', false);
-                            });
-                    });
+                $query->whereHas('orders', function ($sq) use ($eligibleStatuses) {
+                    $sq->whereIn('status', $eligibleStatuses)
+                        ->whereDoesntHave('clientSettlements', function ($ssq) {
+                            $ssq->where('client_settlements.status', '!=', 'CANCELLED');
+                        })
+                        ->where('is_client_settled', false);
                 });
 
                 if ($requireShipperCollectionFirst) {
                     $query->where(function ($q) use ($eligibleStatuses) {
                         $q->where('can_settle_before_shipper_collected', true)
-                          ->orWhereHas('orders', function ($sq) use ($eligibleStatuses) {
-                              $sq->whereIn('status', $eligibleStatuses)
-                                ->whereDoesntHave('clientSettlements', function ($ssq) {
-                                    $ssq->where('client_settlements.status', '!=', 'CANCELLED');
-                                })
-                                ->where('is_client_settled', false)
-                                ->where('is_shipper_collected', true);
-                          });
+                            ->orWhereHas('orders', function ($sq) use ($eligibleStatuses) {
+                                $sq->whereIn('status', $eligibleStatuses)
+                                    ->whereDoesntHave('clientSettlements', function ($ssq) {
+                                        $ssq->where('client_settlements.status', '!=', 'CANCELLED');
+                                    })
+                                    ->where('is_client_settled', false)
+                                    ->where('is_shipper_collected', true);
+                            });
                     });
                 }
             } elseif ($type === 'return') {
                 $query->whereHas('orders', function ($q) {
-                    $q->whereIn('status', \App\Http\Controllers\Api\Orders\ClientReturnController::ELIGIBLE_ORDER_STATUSES)
-                      ->where('is_shipper_returned', true)
-                      ->whereDoesntHave('clientReturns', function ($sq) {
-                          $sq->where('client_returns.status', '!=', 'CANCELLED');
-                      })
-                      ->where('is_client_returned', false);
+                    $q->eligibleForClientReturn();
                 });
             }
         }
 
-        $perPage = $request->get('per_page', $request->get('itemsPerPage', 5));
+        $perPage = $request->get('per_page', $request->get('itemsPerPage', -1));
         $clients = $perPage == -1 
             ? $query->orderByDesc('id')->get()
             : $query->orderByDesc('id')->paginate($perPage);

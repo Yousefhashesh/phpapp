@@ -112,7 +112,7 @@ const onSubmit = async () => {
       payload.client_user_id = formData.value.client_user_id
     }
 
-    const { error } = await useApi('/client-settlements').post(payload).json()
+    const { data, error } = await useApi('/client-settlements').post(payload).json()
 
     if (error.value) {
       if (error.value.data?.errors) {
@@ -121,7 +121,7 @@ const onSubmit = async () => {
         errorMessages.value = ['Failed to create settlement']
       }
     } else {
-      emit('settlementCreated')
+      emit('settlementCreated', data.value?.data)
       emit('update:isDialogVisible', false)
       formData.value.client_user_id = null
       selectedOrders.value = []

@@ -7,11 +7,15 @@ use App\Exports\OrdersTemplateExport;
 use App\Http\Controllers\Controller;
 use App\Imports\OrdersImport;
 use App\Models\Client;
+use App\Models\ClientSettlement;
+use App\Models\ClientSettlementOrder;
 use App\Models\Governorate;
 use App\Models\Order;
 use App\Models\PlanPrice;
 use App\Models\RefusedReason;
 use App\Models\Shipper;
+use App\Models\ShipperCollection;
+use App\Models\ShipperCollectionOrder;
 use App\Support\Permissions\OrdersPermissionMap;
 use App\Support\Services\FinancialFormulaService;
 use App\Traits\ChecksWorkingHours;
@@ -29,6 +33,18 @@ class OrderController extends Controller
     use ChecksWorkingHours;
 
     private const FINAL_STATUSES = ['DELIVERED', 'UNDELIVERED'];
+
+    private const FINANCIAL_DOCUMENT_INLINE_FIELDS = [
+        'receiver_name',
+        'phone',
+        'total_amount',
+        'shipping_fee',
+        'commission_amount',
+        'company_amount',
+        'cod_amount',
+        'order_note',
+        'latest_status_note',
+    ];
 
     private const STATUS_LABELS = [
         'OUT_FOR_DELIVERY' => 'Out for delivery',
@@ -159,7 +175,6 @@ class OrderController extends Controller
     {
         $this->authorizePermission($request, 'order.update');
         $this->authorizeOrderVisible($request, $order);
-        $this->authorizeNotShipperCollected($order);
         $this->authorizeFinalStatusUpdate($request, $order);
 
         // $data = $request->validate([
@@ -191,20 +206,27 @@ $data = $request->validate([
     'total_amount' => ['sometimes', 'required', 'numeric', 'min:0'],
     'shipping_fee' => ['sometimes', 'nullable', 'numeric', 'min:0'],
     'commission_amount' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+    'company_amount' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+    'cod_amount' => ['sometimes', 'nullable', 'numeric', 'min:0'],
     'status' => ['sometimes', 'required', Rule::in(['OUT_FOR_DELIVERY', 'DELIVERED', 'HOLD', 'UNDELIVERED'])],
     'allow_open' => ['sometimes', 'boolean'],
     'latest_status_note' => ['nullable', 'string'],
     'order_note' => ['nullable', 'string'],
 ]);
         $this->authorizeEditableColumns($request, array_keys($data));
+        $this->authorizeFinancialDocumentOrderUpdate($order, $data);
 
         if (array_key_exists('shipper_user_id', $data)) {
             $this->authorizeShipperChangeAllowed($order);
         }
 
+        if (array_key_exists('status', $data)) {
+            $this->authorizeRevertToActiveDeliveryStatus($order, $data['status']);
+        }
+
       //  $this->authorizeClientShipperMatchesGovernorate($request, $data, $order);
 
-        $this->authorizeNoPriceEditOnFinalStatus($order, $data);
+        $this->authorizePriceEditOnFinalStatus($order, $data);
 
         $data = $this->resolveDefaultShipper($data, $order);
 
@@ -217,6 +239,12 @@ $data = $request->validate([
         }
 
         $order->update($data);
+
+        // Recalculate related financial document totals if financial fields changed
+        $financialFields = ['total_amount', 'shipping_fee', 'commission_amount', 'company_amount', 'cod_amount'];
+        if (array_intersect(array_keys($data), $financialFields) !== []) {
+            $this->recalculateRelatedFinancialDocuments($order->fresh());
+        }
 
         return response()->json([
             'message' => 'Order updated successfully.',
@@ -279,6 +307,8 @@ $data = $request->validate([
             'has_return' => ['nullable', 'boolean'],
         ]);
 
+        $this->authorizeRevertToActiveDeliveryStatus($order, $data['status']);
+
         $reasonIds = $data['refused_reason_ids'] ?? [];
         $refusedReasons = collect($reasonIds)
             ->map(function ($id) {
@@ -312,16 +342,16 @@ $data = $request->validate([
             $payload['cod_amount'] = 0;
         }
 
-        if ($data['status'] === 'DELIVERED' && $allowsEditAmount) {
-            $payload['has_return'] = true;
-            $payload['has_return_at'] = now();
-        } elseif (array_key_exists('has_return', $data)) {
+        if (array_key_exists('has_return', $data)) {
             $payload['has_return'] = (bool)$data['has_return'];
             if ($payload['has_return']) {
                 $payload['has_return_at'] = now();
             } else {
                 $payload['has_return_at'] = null;
             }
+        } elseif ($data['status'] === 'DELIVERED' && $allowsEditAmount) {
+            $payload['has_return'] = true;
+            $payload['has_return_at'] = now();
         }
 
         if (!$isClear) {
@@ -571,6 +601,7 @@ $data = $request->validate([
 
                 $this->authorizeNotShipperCollected($order);
                 $this->authorizeFinalStatusUpdate(request(), $order);
+                $this->authorizeRevertToActiveDeliveryStatus($order, $data['status']);
 
                 // Build note
                 $noteParts = [];
@@ -1128,6 +1159,8 @@ $data = $request->validate([
             'is_in_client_settlement' => ['nullable'],
             'is_in_shipper_return' => ['nullable'],
             'is_in_client_return' => ['nullable'],
+            'shipper_return_pending' => ['nullable'],
+            'client_return_pending' => ['nullable'],
             'order_note' => ['nullable', 'string', 'max:255'],
             'latest_status_note' => ['nullable', 'string', 'max:255'],
             'shipper_date' => ['nullable', 'string', 'max:255'],
@@ -1267,6 +1300,50 @@ $data = $request->validate([
                 'order' => ['Order is locked because it has already been collected by the shipper.'],
             ]);
         }
+    }
+
+    private function isFinancialDocumentInlineUpdate(array $data): bool
+    {
+        return array_diff(array_keys($data), self::FINANCIAL_DOCUMENT_INLINE_FIELDS) === [];
+    }
+
+    private function authorizeFinancialDocumentOrderUpdate(Order $order, array $data): void
+    {
+        if (! $order->isFinanciallyLockedForStatusRevert()) {
+            $this->authorizeNotShipperCollected($order);
+
+            return;
+        }
+
+        if (! $this->isFinancialDocumentInlineUpdate($data)) {
+            throw ValidationException::withMessages([
+                'order' => ['Cannot modify these fields while order is in an active collection, settlement, or return. Cancel/unlock the document first.'],
+            ]);
+        }
+    }
+
+    private function authorizePriceEditOnFinalStatus(Order $order, array $payload): void
+    {
+        if ($order->isFinanciallyLockedForStatusRevert() && $this->isFinancialDocumentInlineUpdate($payload)) {
+            return;
+        }
+
+        $this->authorizeNoPriceEditOnFinalStatus($order, $payload);
+    }
+
+    private function authorizeRevertToActiveDeliveryStatus(Order $order, string $newStatus): void
+    {
+        if (! in_array($newStatus, ['OUT_FOR_DELIVERY', 'HOLD'], true)) {
+            return;
+        }
+
+        if (! $order->isFinanciallyLockedForStatusRevert()) {
+            return;
+        }
+
+        throw ValidationException::withMessages([
+            'status' => ['Cannot change order status to OUT_FOR_DELIVERY or HOLD while it is in an active shipper collection, client settlement, or return. Cancel/unlock the financial document first.'],
+        ]);
     }
 
     private function authorizeShipperChangeAllowed(Order $order): void
@@ -1500,6 +1577,32 @@ $data = $request->validate([
         if (! empty($approvalStatuses)) {
             $query->whereIn('approval_status', array_unique($approvalStatuses));
             unset($columnSearch['approval_status'], $columnSearch['approval_statuses']);
+        }
+
+        foreach (['shipper_return_pending', 'client_return_pending'] as $pendingFilter) {
+            foreach ([$validated, $columnSearch] as $source) {
+                if (! array_key_exists($pendingFilter, $source)) {
+                    continue;
+                }
+
+                $value = $source[$pendingFilter];
+                if ($value === null || $value === '') {
+                    continue;
+                }
+
+                $isTrue = ($value === 'true' || $value === true || $value === '1' || $value === 1);
+
+                if ($isTrue) {
+                    if ($pendingFilter === 'shipper_return_pending') {
+                        $query->eligibleForShipperReturn();
+                    } else {
+                        $query->eligibleForClientReturn();
+                    }
+                }
+
+                unset($columnSearch[$pendingFilter]);
+                break;
+            }
         }
 
         $directFilters = [
@@ -1903,5 +2006,87 @@ $data = $request->validate([
     }
 
 
+    /**
+     * Recalculate pivot records and parent totals for any active financial documents
+     * (shipper collections and client settlements) containing this order.
+     */
+    private function recalculateRelatedFinancialDocuments(Order $order): void
+    {
+        $formulaService = app(FinancialFormulaService::class);
+
+        // --- Shipper Collections ---
+        $collectionPivots = ShipperCollectionOrder::where('order_id', $order->id)->get();
+        foreach ($collectionPivots as $pivot) {
+            $collection = ShipperCollection::find($pivot->shipper_collection_id);
+            if (!$collection || $collection->status === 'CANCELLED') {
+                continue;
+            }
+
+            // Update pivot record with fresh order values
+            $newNetAmount = $formulaService->calculate('formula_shipper_collection_net_amount', [
+                'total_amount' => (float) $order->total_amount,
+                'shipping_fee' => (float) $order->shipping_fee,
+                'commission_amount' => (float) $order->commission_amount,
+                'company_amount' => (float) $order->company_amount,
+                'cod_amount' => (float) $order->cod_amount,
+                'settlement_fees' => 0,
+            ]);
+
+            $pivot->update([
+                'order_amount' => $order->total_amount,
+                'shipper_fee' => $order->commission_amount,
+                'net_amount' => round(max($newNetAmount, 0), 2),
+            ]);
+
+            // Recalculate collection totals from all its pivot records
+            // net_amount على مستوى الكوليكشن = MAX(total_amount - shipper_fees, 0)
+            // وليس SUM(per-pivot MAX(net,0)) لأن الحصر per-order بيضيف قيم إضافية
+            // مثال: order.total=0, commission=50 → per-pivot net=0 لكن commission متحسبة
+            // فـ SUM net_amounts = 425 بدل 520-245=275 الصح
+            $allPivots = ShipperCollectionOrder::where('shipper_collection_id', $collection->id)->get();
+            $collectionTotalAmount  = round($allPivots->sum('order_amount'), 2);
+            $collectionShipperFees  = round($allPivots->sum('shipper_fee'), 2);
+            $collection->update([
+                'total_amount'   => $collectionTotalAmount,
+                'shipper_fees'   => $collectionShipperFees,
+                'net_amount'     => round(max($collectionTotalAmount - $collectionShipperFees, 0), 2),
+                'number_of_orders' => $allPivots->count(),
+            ]);
+        }
+
+        // --- Client Settlements ---
+        $settlementPivots = ClientSettlementOrder::where('order_id', $order->id)->get();
+        foreach ($settlementPivots as $pivot) {
+            $settlement = ClientSettlement::find($pivot->client_settlement_id);
+            if (!$settlement || $settlement->status === 'CANCELLED') {
+                continue;
+            }
+
+            // Update pivot record with fresh order values
+            $newNetAmount = $formulaService->calculate('formula_client_settlement_net_amount', [
+                'total_amount' => (float) $order->total_amount,
+                'shipping_fee' => (float) $order->shipping_fee,
+                'commission_amount' => (float) $order->commission_amount,
+                'company_amount' => (float) $order->company_amount,
+                'cod_amount' => (float) $order->cod_amount,
+                'settlement_fees' => 0,
+            ]);
+
+            $pivot->update([
+                'order_amount' => $order->total_amount,
+                'fee' => $order->shipping_fee,
+                'net_amount' => round(max($newNetAmount, 0), 2),
+            ]);
+
+            // Recalculate settlement totals from all its pivot records
+            $allPivots = ClientSettlementOrder::where('client_settlement_id', $settlement->id)->get();
+            $settlement->update([
+                'total_amount' => round($allPivots->sum('order_amount'), 2),
+                'fees' => round($allPivots->sum('fee'), 2),
+                'net_amount' => round(max($allPivots->sum('net_amount'), 0), 2),
+                'number_of_orders' => $allPivots->count(),
+            ]);
+        }
+    }
 
 }

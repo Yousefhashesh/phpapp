@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import FinancialOrdersDetailTable from '@/views/apps/orders/components/FinancialOrdersDetailTable.vue'
 import { useApi } from "@/composables/useApi";
+import { useFlashHighlight } from '@/composables/useFlashHighlight'
 import { useUserRole } from '@/composables/useUserRole';
 import { createUrl } from "@core/composable/createUrl";
 import { avatarText } from "@core/utils/formatters";
 import { useRoute } from 'vue-router';
 
 const route = useRoute()
+const router = useRouter()
+const { flash, isFlashing } = useFlashHighlight()
 const { isClientUser } = useUserRole()
 
 const searchQuery = ref("");
@@ -138,38 +140,84 @@ const approvalColors: any = {
 };
 
 //    Actions
-const isDetailsDialogVisible = ref(false);
 const selectedSettlement = ref<any>(null);
 const isCreateDialogVisible = ref(false);
 const isApprovalDialogVisible = ref(false);
 const approvalAction = ref<"approve" | "reject">("approve");
 const approvalNote = ref("");
 
-const viewDetails = async (id: number) => {
-  const { data } = await useApi<any>(`/client-settlements/${id}`).get().json();
-  if (data.value) {
-    selectedSettlement.value = data.value;
-    isDetailsDialogVisible.value = true;
+const isEditDialogVisible = ref(false);
+const editSettlementData = ref({
+  id: null as number | null,
+  settlement_date: "",
+  total_amount: 0,
+  fees: 0,
+  net_amount: 0,
+});
+const isSavingEdit = ref(false);
+const editErrorMessages = ref<string[]>([]);
+
+const openEditDialog = (item: any) => {
+  editSettlementData.value = {
+    id: item.id,
+    settlement_date: item.settlement_date ? new Date(item.settlement_date).toISOString().substr(0, 10) : "",
+    total_amount: Number(item.total_amount) || 0,
+    fees: Number(item.fees) || 0,
+    net_amount: Number(item.net_amount) || 0,
+  };
+  editErrorMessages.value = [];
+  isEditDialogVisible.value = true;
+};
+
+const patchSettlement = (id: number, patch: Record<string, any>) => {
+  const list = settlementsData.value?.data
+  if (!list)
+    return
+
+  const index = list.findIndex((s: any) => s.id === id)
+  if (index === -1)
+    return
+
+  list[index] = { ...list[index], ...patch }
+  flash(`settlement-${id}`)
+}
+
+const submitEdit = async () => {
+  if (!editSettlementData.value.id) return;
+  
+  isSavingEdit.value = true;
+  editErrorMessages.value = [];
+  
+  try {
+    const { data, error } = await useApi(`/client-settlements/${editSettlementData.value.id}`)
+      .patch({
+        settlement_date: editSettlementData.value.settlement_date,
+        total_amount: editSettlementData.value.total_amount,
+        fees: editSettlementData.value.fees,
+        net_amount: editSettlementData.value.net_amount,
+      })
+      .json();
+      
+    if (error.value) {
+      if ((error.value as any).data?.errors) {
+        editErrorMessages.value = Object.values((error.value as any).data.errors).flat() as string[];
+      } else {
+        editErrorMessages.value = [(error.value as any).message || 'Failed to update settlement'];
+      }
+    } else {
+      isEditDialogVisible.value = false;
+      patchSettlement(editSettlementData.value.id, data.value?.data || editSettlementData.value);
+    }
+  } catch (e: any) {
+    editErrorMessages.value = ['An error occurred while saving.'];
+  } finally {
+    isSavingEdit.value = false;
   }
 };
 
-const settlementFinancialSummary = computed(() => {
-  const orders = selectedSettlement.value?.orders ?? [];
-  let totalAmount = 0;
-  let totalFees = 0;
-  let totalCod = 0;
-
-  for (const order of orders) {
-    totalAmount += Number(order.total_amount) || 0;
-    totalFees += Number(order.shipping_fee) || 0;
-    totalCod += Number(order.cod_amount) || 0;
-  }
-
-  return { totalAmount, totalFees, totalCod };
-});
-
-const formatSummaryMoney = (value: number) =>
-  `EGP ${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const viewDetails = (id: number) => {
+  router.push({ name: 'apps-orders-client-settlements-id', params: { id } })
+};
 
 const openApprovalDialog = (id: number, action: "approve" | "reject") => {
   selectedSettlement.value = settlements.value.find((c: any) => c.id === id);
@@ -182,26 +230,30 @@ const submitApproval = async () => {
   if (!selectedSettlement.value) return;
 
   processingAction.value = true;
-  const url = `/client-settlements/${selectedSettlement.value.id}/${approvalAction.value}`;
-  const { error } = await useApi(url)
+  const settlementId = selectedSettlement.value.id;
+  const url = `/client-settlements/${settlementId}/${approvalAction.value}`;
+  const { data, error } = await useApi(url)
     .patch({ approval_note: approvalNote.value })
     .json();
 
   if (!error.value) {
     isApprovalDialogVisible.value = false;
-    fetchSettlements();
+    patchSettlement(settlementId, {
+      approval_status: approvalAction.value === 'approve' ? 'APPROVED' : 'REJECTED',
+      ...(data.value?.data || {}),
+    });
   }
   processingAction.value = false;
 };
 
 const updateStatus = async (id: number, status: string) => {
   processingAction.value = true;
-  const { error } = await useApi(`/client-settlements/${id}`)
+  const { data, error } = await useApi(`/client-settlements/${id}`)
     .patch({ status })
     .json();
 
   if (!error.value) {
-    fetchSettlements();
+    patchSettlement(id, { status, ...(data.value?.data || {}) });
   }
   processingAction.value = false;
 };
@@ -243,40 +295,31 @@ onMounted(() => {
 });
 
 import ClientSettlementModal from "./ClientSettlementModal.vue";
-const removeOrderFromSettlement = async (orderId: number) => {
-  if (!selectedSettlement.value) return;
-  
-  processingAction.value = true;
-  const { data, error } = await useApi(`/client-settlements/${selectedSettlement.value.id}/orders/${orderId}`)
-    .delete()
-    .json();
 
-  if (!error.value) {
-    if (data.value?.deleted) {
-      isDetailsDialogVisible.value = false;
-      selectedSettlement.value = null;
-    } else {
-      selectedSettlement.value = data.value?.data || data.value;
-    }
-    fetchSettlements();
+const onSettlementCreated = (settlement?: any) => {
+  if (settlement && settlementsData.value?.data) {
+    settlementsData.value.data.unshift(settlement)
+    flash(`settlement-${settlement.id}`)
+  } else {
+    fetchSettlements()
   }
-  processingAction.value = false;
-};
+}
 
 const bulkUpdateStatus = async (status: string) => {
   if (selectedIds.value.length === 0) return;
 
   processingAction.value = true;
+  const ids = selectedIds.value.map((i: any) => i.id || i);
   const { error } = await useApi("/client-settlements/bulk-status")
     .patch({
-      ids: selectedIds.value.map((i: any) => i.id || i),
+      ids,
       status: status,
     })
     .json();
 
   if (!error.value) {
+    ids.forEach((id: number) => patchSettlement(id, { status }));
     selectedIds.value = [];
-    fetchSettlements();
   }
   processingAction.value = false;
 };
@@ -370,7 +413,7 @@ const exportSettlements = async () => {
     </VRow>
     <ClientSettlementModal
       v-model:is-dialog-visible="isCreateDialogVisible"
-      @settlement-created="fetchSettlements"
+      @settlement-created="onSettlementCreated"
     />
     <VCard>
       <VCardText class="d-flex flex-wrap gap-4 align-center">
@@ -500,6 +543,9 @@ const exportSettlements = async () => {
         :headers="activeHeaders"
         :loading="isFetching"
         class="text-no-wrap"
+        :row-props="({ item }: { item: any }) => ({
+          class: isFlashing(`settlement-${item.id}`) ? 'row-flash' : '',
+        })"
         loading-text="تحميل البيانات..."
       >
         <!-- ID -->
@@ -583,6 +629,17 @@ const exportSettlements = async () => {
               <VTooltip activator="parent">View Details</VTooltip>
             </IconBtn>
 
+            <!-- Edit Details -->
+            <IconBtn
+              v-if="can('client-settlement.update' as any, 'all' as any)"
+              size="small"
+              color="secondary"
+              @click="openEditDialog(item)"
+            >
+              <VIcon icon="tabler-edit" />
+              <VTooltip activator="parent">Edit Settlement</VTooltip>
+            </IconBtn>
+
             <!-- Invoice -->
             <VBtn
               v-if="can('client-settlement.view' as any, 'all' as any)"
@@ -646,98 +703,6 @@ const exportSettlements = async () => {
       </VDataTable>
     </VCard>
 
-    <!-- Details Dialog -->
-    <VDialog
-      v-model="isDetailsDialogVisible"
-      max-width="1200"
-      scrollable
-    >
-      <VCard :title="`Settlement Details - #${selectedSettlement?.id}`">
-        <VCardText>
-          <VRow>
-            <VCol
-              cols="12"
-              md="4"
-            >
-              <div class="text-subtitle-2 mb-1">
-                Total Amount
-              </div>
-              <div class="text-body-1 font-weight-bold">
-                {{ formatSummaryMoney(settlementFinancialSummary.totalAmount) }}
-              </div>
-            </VCol>
-            <VCol
-              cols="12"
-              md="4"
-            >
-              <div class="text-subtitle-2 mb-1">
-                Total Fees
-              </div>
-              <div class="text-body-1 font-weight-bold text-error">
-                {{ formatSummaryMoney(settlementFinancialSummary.totalFees) }}
-              </div>
-            </VCol>
-            <VCol
-              cols="12"
-              md="4"
-            >
-              <div class="text-subtitle-2 mb-1">
-                COD Amount
-              </div>
-              <div class="text-body-1 font-weight-bold text-success">
-                {{ formatSummaryMoney(settlementFinancialSummary.totalCod) }}
-              </div>
-            </VCol>
-          </VRow>
-
-          <VDivider class="my-4" />
-
-          <div class="text-h6 mb-2">
-            Orders
-          </div>
-          <FinancialOrdersDetailTable
-            :orders="selectedSettlement?.orders || []"
-            :show-actions="can('client-settlement.update' as any, 'all' as any)"
-            :processing-action="processingAction"
-            @remove="removeOrderFromSettlement"
-          />
-        </VCardText>
-        <VCardActions>
-          <VBtn
-            v-if="
-              selectedSettlement?.approval_status === 'PENDING' &&
-              can('client-settlement.approve' as any, 'all' as any)
-            "
-            color="success"
-            variant="tonal"
-            prepend-icon="tabler-check"
-            @click="openApprovalDialog(selectedSettlement.id, 'approve')"
-          >
-            Approve
-          </VBtn>
-          <VBtn
-            v-if="
-              selectedSettlement?.approval_status === 'PENDING' &&
-              can('client-settlement.reject' as any, 'all' as any)
-            "
-            color="error"
-            variant="tonal"
-            prepend-icon="tabler-x"
-            @click="openApprovalDialog(selectedSettlement.id, 'reject')"
-          >
-            Reject
-          </VBtn>
-          <VSpacer />
-          <VBtn
-            color="secondary"
-            variant="tonal"
-            @click="isDetailsDialogVisible = false"
-            >Close</VBtn
-          >
-        </VCardActions>
-      </VCard>
-    </VDialog>
-
     <!-- Approval Dialog -->
     <VDialog v-model="isApprovalDialogVisible" max-width="500">
       <VCard
@@ -778,5 +743,85 @@ const exportSettlements = async () => {
         </VCardActions>
       </VCard>
     </VDialog>
+
+    <!-- Edit Dialog -->
+    <VDialog v-model="isEditDialogVisible" max-width="600">
+      <VCard title="تعديل تفاصيل التسوية">
+        <VCardText>
+          <VAlert
+            v-if="editErrorMessages.length"
+            type="error"
+            variant="tonal"
+            class="mb-4"
+          >
+            <div v-for="err in editErrorMessages" :key="err">{{ err }}</div>
+          </VAlert>
+          
+          <VRow>
+            <VCol cols="12" md="6">
+              <AppTextField
+                v-model="editSettlementData.settlement_date"
+                label="تاريخ التسوية"
+                type="date"
+              />
+            </VCol>
+            <VCol cols="12" md="6">
+              <AppTextField
+                v-model="editSettlementData.total_amount"
+                label="إجمالي المبلغ"
+                type="number"
+              />
+            </VCol>
+            <VCol cols="12" md="6">
+              <AppTextField
+                v-model="editSettlementData.fees"
+                label="الرسوم والخصومات"
+                type="number"
+              />
+            </VCol>
+            <VCol cols="12" md="6">
+              <AppTextField
+                v-model="editSettlementData.net_amount"
+                label="صافي المبلغ (مستحقات العميل)"
+                type="number"
+              />
+            </VCol>
+          </VRow>
+        </VCardText>
+        <VCardActions>
+          <VSpacer />
+          <VBtn
+            color="secondary"
+            variant="tonal"
+            @click="isEditDialogVisible = false"
+          >
+            إلغاء
+          </VBtn>
+          <VBtn
+            color="primary"
+            :loading="isSavingEdit"
+            @click="submitEdit"
+          >
+            حفظ التعديلات
+          </VBtn>
+        </VCardActions>
+      </VCard>
+    </VDialog>
   </section>
 </template>
+
+<style scoped>
+:deep(.row-flash) {
+  animation: row-flash 2s ease-out;
+}
+
+@keyframes row-flash {
+  0% {
+    box-shadow: inset 0 0 0 2px rgb(var(--v-theme-primary));
+  }
+
+  100% {
+    box-shadow: inset 0 0 0 0 transparent;
+  }
+}
+</style>

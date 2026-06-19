@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useApi } from '@/composables/useApi';
 import { useNotificationStore } from '@/stores/useNotificationStore';
+import { isActiveDeliveryStatus, isOrderFinanciallyLocked } from '@/utils/orderFinancialLock'
 
 
 interface Props {
@@ -52,10 +53,32 @@ const filteredReasons = computed(() => {
   return allReasons.value.filter((r: any) => r.is_active && r.status === statusData.value.status)
 })
 
+const hasFinanciallyLockedOrders = computed(() =>
+  props.selectedOrders.some(order => isOrderFinanciallyLocked(order)),
+)
+
+const statusItems = computed(() => {
+  const items = [
+    { title: 'Out for delivery', value: 'OUT_FOR_DELIVERY' },
+    { title: 'Delivered', value: 'DELIVERED' },
+    { title: 'On hold', value: 'HOLD' },
+    { title: 'Undelivered', value: 'UNDELIVERED' },
+  ]
+
+  if (hasFinanciallyLockedOrders.value)
+    return items.filter(item => !isActiveDeliveryStatus(item.value))
+
+  return items
+})
+
 const onSubmit = async () => {
   const validOrders = props.selectedOrders.filter(o => {
-    const isLocked = o.is_shipper_collected || o.is_client_settled || o.is_shipper_returned || o.is_client_returned
+    const isLocked = isOrderFinanciallyLocked(o)
     const isFinal = ['DELIVERED', 'UNDELIVERED', 'CANCELLED'].includes(o.status)
+
+    if (isActiveDeliveryStatus(statusData.value.status) && isLocked)
+      return false
+
     return !isLocked && !isFinal
   })
   
@@ -73,14 +96,14 @@ const onSubmit = async () => {
   }
   
   // Only include total_amount if it has a value
-  if (statusData.value.total_amount !== null && statusData.value.total_amount !== '') {
+  if (statusData.value.total_amount !== null) {
     payload.total_amount = statusData.value.total_amount
   }
 
   try {
-    const { error } = await useApi('/orders/bulk-change-status').patch(payload).json()
+    const { data, error } = await useApi('/orders/bulk-change-status').patch(payload).json()
     if (!error.value) {
-      emit('statusUpdated')
+      emit('statusUpdated', data.value?.updated_order_ids || [])
       emit('update:isDialogVisible', false)
     } else {
       notify('خطأ أثناء التحديث: ' + (error.value?.message || 'يرجى المحاولة مرة أخرى'), 'error')
@@ -101,17 +124,20 @@ const onSubmit = async () => {
   >
     <VCard :title="`Bulk Update Status (${props.selectedOrders.length} items)`" :loading="isLoading">
       <VCardText>
+        <VAlert
+          v-if="hasFinanciallyLockedOrders"
+          type="warning"
+          variant="tonal"
+          class="mb-4"
+        >
+          بعض الأوردرات المحددة مرتبطة بتحصيل/تسوية/مرتجع — لا يمكن تغييرها إلى OUT_FOR_DELIVERY أو HOLD.
+        </VAlert>
         <VRow>
           <VCol cols="12">
             <AppSelect
               v-model="statusData.status"
               label="New Status"
-              :items="[
-                { title: 'Out for delivery', value: 'OUT_FOR_DELIVERY' },
-                { title: 'Delivered', value: 'DELIVERED' },
-                { title: 'On hold', value: 'HOLD' },
-                { title: 'Undelivered', value: 'UNDELIVERED' },
-              ]"
+              :items="statusItems"
             />
           </VCol>
 

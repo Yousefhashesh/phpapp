@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useApi } from '@/composables/useApi';
+import { useFlashHighlight } from '@/composables/useFlashHighlight'
 import { useNotificationStore } from '@/stores/useNotificationStore';
 import { createUrl } from '@core/composable/createUrl';
 import { useI18n } from 'vue-i18n';
@@ -16,6 +17,7 @@ const props = defineProps<{
 }>()
 
 const { t } = useI18n()
+const { flash, isFlashing } = useFlashHighlight()
 
 const importErrors = ref<string[]>([])
 const isImportErrorsModalVisible = ref(false)
@@ -408,6 +410,65 @@ const applyOrdersData = (oData: any) => {
   }
 }
 
+const refreshSingleOrder = async (orderId: number) => {
+  try {
+    const { data } = await useApi<any>(`/orders/${orderId}`).get().json()
+    if (!data.value)
+      return
+
+    const index = orders.value.findIndex(o => o.id === orderId)
+    if (index === -1)
+      return
+
+    orders.value[index] = { ...orders.value[index], ...data.value }
+    orders.value = [...orders.value]
+    flash(`order-${orderId}`)
+  } catch (e) {
+    console.error(e)
+  }
+}
+
+const refreshMultipleOrders = async (orderIds: number[]) => {
+  const uniqueIds = [...new Set(orderIds.filter(id => Number.isInteger(id)))]
+  if (!uniqueIds.length)
+    return
+
+  await Promise.all(uniqueIds.map(id => refreshSingleOrder(id)))
+}
+
+const onOrderSaved = (orderId?: number | null) => {
+  if (orderId)
+    refreshSingleOrder(orderId)
+  else
+    fetchOrders()
+}
+
+const onStatusUpdated = (orderId?: number) => {
+  if (orderId)
+    refreshSingleOrder(orderId)
+}
+
+const onShipperUpdated = (orderId?: number) => {
+  if (orderId)
+    refreshSingleOrder(orderId)
+}
+
+const onBulkStatusUpdated = (orderIds?: number[]) => {
+  selectedOrders.value = []
+  if (orderIds?.length)
+    refreshMultipleOrders(orderIds)
+  else
+    fetchOrders()
+}
+
+const onBulkShipperUpdated = (orderIds?: number[]) => {
+  selectedOrders.value = []
+  if (orderIds?.length)
+    refreshMultipleOrders(orderIds)
+  else
+    fetchOrders()
+}
+
 const fetchOrders = async () => {
   isLoading.value = true
   try {
@@ -768,6 +829,146 @@ const sendToWhatsApp = (item: any) => {
   window.open(url, '_blank')
 }
 
+// ===== Financial Action Buttons =====
+
+const processingFinancialAction = ref(false)
+
+// Shipper Collection: Create or Cancel
+const toggleShipperCollection = async (item: any) => {
+  processingFinancialAction.value = true
+  try {
+    if (item.is_shipper_collected) {
+      // Cancel: find active collection containing this order and cancel it
+      // We need to set is_shipper_collected = false by removing from collection
+      // But the correct approach is: the user should go to the collection page.
+      // For now, toggle via order flag
+      notify('لإلغاء التحصيل، يرجى الذهاب لصفحة تحصيلات المناديب وإلغاء التحصيل المرتبط.', 'warning')
+    } else {
+      // Create new collection with this single order
+      if (!item.shipper_user_id) {
+        notify('هذا الأوردر ليس مُسند لمندوب', 'error')
+        return
+      }
+      const { data, error } = await useApi('/shipper-collections')
+        .post({
+          shipper_user_id: item.shipper_user_id,
+          order_ids: [item.id],
+        })
+        .json()
+
+      if (!error.value) {
+        notify('تم إنشاء تحصيل الكابتن بنجاح', 'success')
+        refreshSingleOrder(item.id)
+      } else {
+        const msg = (error.value as any)?.data?.message || (error.value as any)?.message || 'حدث خطأ'
+        notify(msg, 'error')
+      }
+    }
+  } catch (e) {
+    notify('حدث خطأ أثناء العملية', 'error')
+  } finally {
+    processingFinancialAction.value = false
+  }
+}
+
+// Client Settlement: Create or Cancel
+const toggleClientSettlement = async (item: any) => {
+  processingFinancialAction.value = true
+  try {
+    if (item.is_client_settled) {
+      notify('لإلغاء التسوية، يرجى الذهاب لصفحة تسويات العملاء وإلغاء التسوية المرتبطة.', 'warning')
+    } else {
+      if (!item.client_user_id) {
+        notify('هذا الأوردر ليس مُسند لعميل', 'error')
+        return
+      }
+      const { data, error } = await useApi('/client-settlements')
+        .post({
+          client_user_id: item.client_user_id,
+          settlement_date: new Date().toISOString().substr(0, 10),
+          total_amount: Number(item.total_amount) || 0,
+          number_of_orders: 1,
+          order_ids: [item.id],
+        })
+        .json()
+
+      if (!error.value) {
+        notify('تم إنشاء تسوية العميل بنجاح', 'success')
+        refreshSingleOrder(item.id)
+      } else {
+        const msg = (error.value as any)?.data?.message || (error.value as any)?.message || 'حدث خطأ'
+        notify(msg, 'error')
+      }
+    }
+  } catch (e) {
+    notify('حدث خطأ أثناء العملية', 'error')
+  } finally {
+    processingFinancialAction.value = false
+  }
+}
+
+// Shipper Return
+const createShipperReturn = async (item: any) => {
+  processingFinancialAction.value = true
+  try {
+    if (!item.shipper_user_id) {
+      notify('هذا الأوردر ليس مُسند لمندوب', 'error')
+      return
+    }
+    const { data, error } = await useApi('/shipper-returns')
+      .post({
+        shipper_user_id: item.shipper_user_id,
+        return_date: new Date().toISOString().substring(0, 10),
+        number_of_orders: 1,
+        order_ids: [item.id],
+      })
+      .json()
+
+    if (!error.value) {
+      notify('تم إنشاء مرتجع الكابتن بنجاح', 'success')
+      refreshSingleOrder(item.id)
+    } else {
+      const msg = (error.value as any)?.data?.message || (error.value as any)?.message || 'حدث خطأ'
+      notify(msg, 'error')
+    }
+  } catch (e) {
+    notify('حدث خطأ أثناء العملية', 'error')
+  } finally {
+    processingFinancialAction.value = false
+  }
+}
+
+// Client Return
+const createClientReturn = async (item: any) => {
+  processingFinancialAction.value = true
+  try {
+    if (!item.client_user_id) {
+      notify('هذا الأوردر ليس مُسند لعميل', 'error')
+      return
+    }
+    const { data, error } = await useApi('/client-returns')
+      .post({
+        client_user_id: item.client_user_id,
+        return_date: new Date().toISOString().substring(0, 10),
+        number_of_orders: 1,
+        order_ids: [item.id],
+      })
+      .json()
+
+    if (!error.value) {
+      notify('تم إنشاء مرتجع العميل بنجاح', 'success')
+      refreshSingleOrder(item.id)
+    } else {
+      const msg = (error.value as any)?.data?.message || (error.value as any)?.message || 'حدث خطأ'
+      notify(msg, 'error')
+    }
+  } catch (e) {
+    notify('حدث خطأ أثناء العملية', 'error')
+  } finally {
+    processingFinancialAction.value = false
+  }
+}
+
 //    Initial fetch
 searchShippers()
 searchClients()
@@ -919,6 +1120,9 @@ searchClients()
         class="text-no-wrap filter-table"
         :items-per-page="itemsPerPage"
         hide-default-footer
+        :row-props="({ item }: { item: any }) => ({
+          class: isFlashing(`order-${item.id}`) ? 'row-flash' : '',
+        })"
         loading-text="تحميل البيانات..."
       >
         <!--    Header Filter Slots -->
@@ -1162,6 +1366,56 @@ searchClients()
                       base-color="success"
                       @click="sendToWhatsApp(resolveRowItem(item))"
                     />
+                    <VDivider class="my-1" />
+                    <!-- Financial Actions -->
+                    <VListItem
+                      v-if="!resolveRowItem(item).is_shipper_collected && can('shipper-collection.create' as any, 'all' as any) && ['DELIVERED', 'UNDELIVERED'].includes(resolveRowItem(item).status)"
+                      prepend-icon="tabler-cash"
+                      title="تحصيل من الكابتن"
+                      base-color="success"
+                      :disabled="processingFinancialAction"
+                      @click="toggleShipperCollection(resolveRowItem(item))"
+                    />
+                    <VListItem
+                      v-if="resolveRowItem(item).is_shipper_collected && can('shipper-collection.update' as any, 'all' as any)"
+                      prepend-icon="tabler-cash-off"
+                      title="إلغاء التحصيل من الكابتن"
+                      base-color="error"
+                      :disabled="processingFinancialAction"
+                      @click="toggleShipperCollection(resolveRowItem(item))"
+                    />
+                    <VListItem
+                      v-if="!resolveRowItem(item).is_client_settled && can('client-settlement.create' as any, 'all' as any) && ['DELIVERED', 'UNDELIVERED'].includes(resolveRowItem(item).status)"
+                      prepend-icon="tabler-mood-dollar"
+                      title="تسوية مع العميل"
+                      base-color="info"
+                      :disabled="processingFinancialAction"
+                      @click="toggleClientSettlement(resolveRowItem(item))"
+                    />
+                    <VListItem
+                      v-if="resolveRowItem(item).is_client_settled && can('client-settlement.update' as any, 'all' as any)"
+                      prepend-icon="tabler-mood-off"
+                      title="إلغاء التسوية مع العميل"
+                      base-color="error"
+                      :disabled="processingFinancialAction"
+                      @click="toggleClientSettlement(resolveRowItem(item))"
+                    />
+                    <VListItem
+                      v-if="!resolveRowItem(item).is_shipper_returned && can('shipper-return.create' as any, 'all' as any) && ['DELIVERED', 'UNDELIVERED'].includes(resolveRowItem(item).status)"
+                      prepend-icon="tabler-arrow-back-up"
+                      title="مرتجع من الكابتن"
+                      base-color="warning"
+                      :disabled="processingFinancialAction"
+                      @click="createShipperReturn(resolveRowItem(item))"
+                    />
+                    <VListItem
+                      v-if="!resolveRowItem(item).is_client_returned && can('client-return.create' as any, 'all' as any) && resolveRowItem(item).has_return && resolveRowItem(item).is_shipper_returned"
+                      prepend-icon="tabler-package-export"
+                      title="مرتجع من العميل"
+                      base-color="secondary"
+                      :disabled="processingFinancialAction"
+                      @click="createClientReturn(resolveRowItem(item))"
+                    />
                   </VList>
                 </VMenu>
               </VBtn>
@@ -1188,22 +1442,22 @@ searchClients()
       v-model:is-dialog-visible="isAddEditOrderModalVisible"
       :order-id="editingOrderId"
       :metadata="pageMetadata"
-      @order-saved="fetchOrders"
+      @order-saved="onOrderSaved"
     />
-    <OrderStatusModal v-model:is-dialog-visible="isStatusModalVisible" :order="selectedOrderForStatus" :metadata="pageMetadata" @status-updated="fetchOrders" />
-    <OrderShipperModal v-model:is-dialog-visible="isShipperModalVisible" :order="selectedOrderForShipper" :shippers="shippers" @shipper-updated="fetchOrders" />
+    <OrderStatusModal v-model:is-dialog-visible="isStatusModalVisible" :order="selectedOrderForStatus" :metadata="pageMetadata" @status-updated="onStatusUpdated" />
+    <OrderShipperModal v-model:is-dialog-visible="isShipperModalVisible" :order="selectedOrderForShipper" :shippers="shippers" @shipper-updated="onShipperUpdated" />
 
     <BulkOrderStatusModal
       v-model:is-dialog-visible="isBulkStatusModalVisible"
       :selected-orders="selectedOrders"
       :metadata="pageMetadata"
-      @status-updated="() => { fetchOrders(); selectedOrders = [] }"
+      @status-updated="onBulkStatusUpdated"
     />
     <BulkOrderShipperModal
       v-model:is-dialog-visible="isBulkShipperModalVisible"
       :selected-orders="selectedOrders"
       :shippers="shippers"
-      @shipper-updated="() => { fetchOrders(); selectedOrders = [] }"
+      @shipper-updated="onBulkShipperUpdated"
     />
 
     <OrderDetailsModal
@@ -1337,5 +1591,19 @@ searchClients()
 .custom-table-center-border tr {
   block-size: 100%;
   min-block-size: 48px;
+}
+
+:deep(.row-flash) {
+  animation: order-row-flash 2s ease-out;
+}
+
+@keyframes order-row-flash {
+  0% {
+    box-shadow: inset 0 0 0 2px rgb(var(--v-theme-primary));
+  }
+
+  100% {
+    box-shadow: inset 0 0 0 0 transparent;
+  }
 }
 </style>

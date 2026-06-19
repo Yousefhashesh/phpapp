@@ -241,7 +241,7 @@ let whatsappPollTimer: ReturnType<typeof setInterval> | null = null
 const clients = ref<any[]>([])
 const fetchClients = async () => {
   try {
-    const response = await $api('/clients')
+    const response = await $api('/clients?per_page=-1')
     const data = Array.isArray(response)
       ? response
       : (response && Array.isArray(response.data) ? response.data : [])
@@ -534,33 +534,48 @@ onBeforeUnmount(() => {
             <VWindowItem value="financial_formulas">
               <VRow>
                 <VCol cols="12">
-                  <h6 class="text-h6 mb-4">Financial Formulas</h6>
+                  <h6 class="text-h5 mb-2">المعادلات المالية (Financial Formulas)</h6>
+                  <p class="text-caption text-medium-emphasis mb-4 text-white">
+                    المتغيرات المتاحة للاستخدام في المعادلات (يرجى كتابتها بالإنجليزية تماماً كما هي):
+                    <br />
+                    • <code>total_amount</code> : إجمالي قيمة الأوردر (المبلغ المطلوب تحصيله عند الاستلام).
+                    <br />
+                    • <code>shipping_fee</code> : مصاريف الشحن المفروضة على العميل (التاجر).
+                    <br />
+                    • <code>commission_amount</code> : عمولة المندوب .
+                    <br />
+                    • <code>company_amount</code> : صافي ربح الشركة من الشحن.
+                    <br />
+                    • <code>cod_amount</code> : مبلغ التحصيل المستحق للتاجر (قيمة المنتج قبل خصم رسوم التسوية).
+                    <br />
+                    • <code>settlement_fees</code> : رسوم تسوية الحساب الإضافية المخصومة من التاجر.
+                  </p>
                 </VCol>
                 <VCol cols="12" md="6">
                   <AppTextField
                     v-model="settingsData.financial_formulas.formula_company_amount"
-                    label="Company Amount"
+                    label="صافي ربح الشركة من الشحن (formula_company_amount)"
                     placeholder="shipping_fee - commission_amount"
                   />
                 </VCol>
                 <VCol cols="12" md="6">
                   <AppTextField
                     v-model="settingsData.financial_formulas.formula_cod_amount"
-                    label="COD Amount"
+                    label="مبلغ التحصيل المستحق للعميل - COD (formula_cod_amount)"
                     placeholder="total_amount - shipping_fee"
                   />
                 </VCol>
                 <VCol cols="12" md="6">
                   <AppTextField
                     v-model="settingsData.financial_formulas.formula_shipper_collection_net_amount"
-                    label="Shipper Collection Net"
+                    label="صافي تحصيل المندوب - المستحق للخزينة (formula_shipper_collection_net_amount)"
                     placeholder="total_amount - commission_amount"
                   />
                 </VCol>
                 <VCol cols="12" md="6">
                   <AppTextField
                     v-model="settingsData.financial_formulas.formula_client_settlement_net_amount"
-                    label="Client Settlement Net"
+                    label="صافي تسوية العميل - صافي مستحقات التاجر (formula_client_settlement_net_amount)"
                     placeholder="cod_amount - settlement_fees"
                   />
                 </VCol>
