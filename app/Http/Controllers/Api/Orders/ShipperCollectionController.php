@@ -239,9 +239,18 @@ public function index(Request $request): JsonResponse
             $query->whereIn('id', $ids);
         }
 
-        $totalAmount = round($query->sum('net_amount'), 2);
-        
-        $shippers = $query->with('shipper')->get()->pluck('shipper.name')->unique();
+        $exportCollections = (clone $query)
+            ->with(['shipper:id,name', 'orders:id,total_amount,commission_amount'])
+            ->get();
+
+        $totalAmount = round((float) $exportCollections->sum(function (ShipperCollection $collection): float {
+            $totalAmount = (float) $collection->orders->sum('total_amount');
+            $shipperFees = (float) $collection->orders->sum('commission_amount');
+
+            return $totalAmount - $shipperFees;
+        }), 2);
+
+        $shippers = $exportCollections->pluck('shipper.name')->filter()->unique();
         $namePart = ($shippers->count() === 1) ? " - " . $shippers->first() : "";
 
         $date = now()->format('d-m-y');
@@ -370,9 +379,7 @@ public function index(Request $request): JsonResponse
 
         $totalAmount = $orders->sum('total_amount');
         $shipperFees = round((float) $orders->sum('commission_amount'), 2);
-        // net_amount = MAX(total_amount - shipper_fees, 0) على مستوى الكوليكشن
-        // وليس مجموع per-order لتجنب تشوه الحصر (clamping)
-        $netAmount = max((float) $totalAmount - $shipperFees, 0);
+        $netAmount = (float) $totalAmount - $shipperFees;
 
         $creatorId = $request->user()->id;
         $canApproveOnCreate = $request->user()?->can('shipper-collection.approve') ?? false;
@@ -383,7 +390,7 @@ public function index(Request $request): JsonResponse
             'total_amount' => $totalAmount,
             'number_of_orders' => $orders->count(),
             'shipper_fees' => $shipperFees,
-            'net_amount' => max($netAmount, 0),
+            'net_amount' => $netAmount,
             'status' => 'PENDING',
             'approval_status' => $canApproveOnCreate ? 'APPROVED' : 'PENDING',
             'created_by' => $creatorId,
@@ -422,7 +429,7 @@ public function index(Request $request): JsonResponse
             'collection_date' => ['sometimes', 'required', 'date'],
             'total_amount' => ['sometimes', 'nullable', 'numeric', 'min:0'],
             'shipper_fees' => ['sometimes', 'nullable', 'numeric', 'min:0'],
-            'net_amount' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+            'net_amount' => ['sometimes', 'nullable', 'numeric'],
             'status' => ['sometimes', 'required', Rule::in(['PENDING', 'COMPLETED', 'CANCELLED'])],
         ]);
 
@@ -725,7 +732,7 @@ public function index(Request $request): JsonResponse
             'settlement_fees' => 0,
         ]);
 
-        return round(max($amount, 0), 2);
+        return round($amount, 2);
     }
 
     public function removeOrder(Request $request, ShipperCollection $shipperCollection, Order $order): JsonResponse
@@ -873,7 +880,7 @@ public function index(Request $request): JsonResponse
         return [
             'total_amount' => $totalAmount,
             'shipper_fees' => $shipperFees,
-            'net_amount' => round(max($totalAmount - $shipperFees, 0), 2),
+            'net_amount' => round($totalAmount - $shipperFees, 2),
             'number_of_orders' => $numberOfOrders,
         ];
     }

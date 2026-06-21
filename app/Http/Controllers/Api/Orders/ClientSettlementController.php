@@ -60,24 +60,10 @@ class ClientSettlementController extends Controller
             ->forUserRole()
             ->select('client_settlements.*')
             ->with(['client:id,name'])
-            ->selectSub(
-                ClientSettlementOrder::query()
-                    ->selectRaw('COALESCE(SUM(order_amount), 0)')
-                    ->whereColumn('client_settlement_id', 'client_settlements.id'),
-                'pivot_total_amount'
-            )
-            ->selectSub(
-                ClientSettlementOrder::query()
-                    ->selectRaw('COALESCE(SUM(fee), 0)')
-                    ->whereColumn('client_settlement_id', 'client_settlements.id'),
-                'pivot_fees'
-            )
-            ->selectSub(
-                ClientSettlementOrder::query()
-                    ->selectRaw('COALESCE(SUM(net_amount), 0)')
-                    ->whereColumn('client_settlement_id', 'client_settlements.id'),
-                'pivot_net_amount'
-            )
+            ->withCount('orders')
+            ->withSum('orders as current_total_amount', 'total_amount')
+            ->withSum('orders as current_fees', 'shipping_fee')
+            ->withSum('orders as current_net_amount', 'cod_amount')
             ->when(
                 $statuses !== [],
                 fn (Builder $query): Builder => $query->whereIn('status', $statuses)
@@ -115,11 +101,27 @@ class ClientSettlementController extends Controller
         return response()->json([
             'data' => collect($settlements->items())->map(function (ClientSettlement $settlement) use ($request, $precomputedPermissions): array {
                 $filteredData = $this->filterVisibleColumns($request, $settlement, $precomputedPermissions);
+                $totals = $this->calculateSettlementTotalsFromOrderSums(
+                    (float) ($settlement->current_total_amount ?? 0),
+                    (float) ($settlement->current_fees ?? 0),
+                    (float) ($settlement->current_net_amount ?? 0),
+                    (int) ($settlement->orders_count ?? 0),
+                );
+                if (array_key_exists('total_amount', $filteredData)) {
+                    $filteredData['total_amount'] = $totals['total_amount'];
+                }
 
-                // إرجاع القيم المحدثة من جدول الـ Pivot بدلاً من القيم الثابتة في جدول التسويات
-                $filteredData['total_amount'] = (float) ($settlement->pivot_total_amount ?? 0);
-                $filteredData['fees']         = (float) ($settlement->pivot_fees ?? 0);
-                $filteredData['net_amount']   = (float) ($settlement->pivot_net_amount ?? 0);
+                if (array_key_exists('fees', $filteredData)) {
+                    $filteredData['fees'] = $totals['fees'];
+                }
+
+                if (array_key_exists('net_amount', $filteredData)) {
+                    $filteredData['net_amount'] = $totals['net_amount'];
+                }
+
+                if (array_key_exists('number_of_orders', $filteredData)) {
+                    $filteredData['number_of_orders'] = $totals['number_of_orders'];
+                }
 
                 return $filteredData;
             })->values(),
@@ -146,9 +148,15 @@ class ClientSettlementController extends Controller
             $query->whereIn('id', $ids);
         }
 
-        $totalAmount = round($query->sum('net_amount'), 2);
+        $exportSettlements = (clone $query)
+            ->with(['client:id,name', 'orders:id,cod_amount'])
+            ->get();
 
-        $clients = $query->with('client')->get()->pluck('client.name')->unique();
+        $totalAmount = round((float) $exportSettlements->sum(
+            fn (ClientSettlement $settlement): float => (float) $settlement->orders->sum('cod_amount')
+        ), 2);
+
+        $clients = $exportSettlements->pluck('client.name')->filter()->unique();
         $namePart = ($clients->count() === 1) ? " - " . $clients->first() : "";
 
         $date = now()->format('d-m-y');
@@ -219,6 +227,8 @@ class ClientSettlementController extends Controller
                 'address',
                 'total_amount',
                 'shipping_fee',
+                'commission_amount',
+                'company_amount',
                 'cod_amount',
                 'status',
                 'client_user_id',
@@ -375,11 +385,9 @@ class ClientSettlementController extends Controller
             return $settlement;
         });
 
-        $settlement->load(['client:id,name'])->loadCount('orders');
-
         return response()->json([
             'message' => 'Client settlement created successfully.',
-            'data' => $this->filterVisibleColumns($request, $settlement),
+            'data' => $this->settlementDetailsPayload($request, $settlement),
         ], 201);
     }
 
@@ -388,12 +396,7 @@ class ClientSettlementController extends Controller
         $this->authorizePermission($request, 'client-settlement.page');
         $this->authorizePermission($request, 'client-settlement.view');
 
-        $clientSettlement->load(['client:id,name', 'orders.client:id,name']);
-
-        $result = $this->filterVisibleColumns($request, $clientSettlement);
-        $result['orders'] = $clientSettlement->orders;
-
-        return response()->json($result);
+        return response()->json($this->settlementDetailsPayload($request, $clientSettlement));
     }
 
     public function update(Request $request, ClientSettlement $clientSettlement): JsonResponse
@@ -405,7 +408,7 @@ class ClientSettlementController extends Controller
             'settlement_date' => ['sometimes', 'required', 'date'],
             'total_amount' => ['sometimes', 'nullable', 'numeric', 'min:0'],
             'fees' => ['sometimes', 'nullable', 'numeric', 'min:0'],
-            'net_amount' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+            'net_amount' => ['sometimes', 'nullable', 'numeric'],
             'status' => ['sometimes', 'required', Rule::in(['PENDING', 'COMPLETED', 'CANCELLED'])],
         ]);
 
@@ -634,6 +637,8 @@ class ClientSettlementController extends Controller
                 'client_user_id',
                 'total_amount',
                 'shipping_fee',
+                'commission_amount',
+                'company_amount',
                 'cod_amount',
                 'status',
                 'is_client_settled',
@@ -733,7 +738,7 @@ class ClientSettlementController extends Controller
             'settlement_fees' => $settlementFees,
         ]);
 
-        return round(max($amount, 0), 2);
+        return round($amount, 2);
     }
 
     private function requiresShipperCollectionFirst(?int $clientUserId = null): bool
@@ -784,22 +789,14 @@ class ClientSettlementController extends Controller
                 ->first();
 
             if ($pivot) {
-                // Update settlement totals
-                $clientSettlement->total_amount = max(0, $clientSettlement->total_amount - $pivot->order_amount);
-                $clientSettlement->fees = max(0, $clientSettlement->fees - $pivot->fee);
-                $clientSettlement->net_amount = max(0, $clientSettlement->net_amount - $pivot->net_amount);
-                $clientSettlement->number_of_orders = max(0, $clientSettlement->number_of_orders - 1);
-                
-                if ($clientSettlement->number_of_orders <= 0) {
-                    $clientSettlement->delete();
-                } else {
-                    $clientSettlement->save();
-                }
-
-                // Delete pivot record
                 $pivot->delete();
 
-                // Reset order state
+                if (! $clientSettlement->orders()->exists()) {
+                    $clientSettlement->delete();
+                } else {
+                    $this->refreshStoredSettlementTotals($clientSettlement);
+                }
+
                 $order->update([
                     'is_client_settled' => false,
                     'client_settled_at' => null,
@@ -816,7 +813,111 @@ class ClientSettlementController extends Controller
 
         return response()->json([
             'message' => 'Order removed from settlement.',
-            'data' => $this->filterVisibleColumns($request, $clientSettlement->fresh(['client:id,name', 'orders.client:id,name']))
+            'data' => $this->settlementDetailsPayload($request, $clientSettlement->fresh()),
         ]);
+    }
+
+    private function loadSettlementOrderRelations(ClientSettlement $clientSettlement): ClientSettlement
+    {
+        return $clientSettlement->load([
+            'client:id,name',
+            'orders' => fn ($query) => $query->select([
+                'orders.id',
+                'orders.code',
+                'orders.external_code',
+                'orders.receiver_name',
+                'orders.phone',
+                'orders.phone_2',
+                'orders.status',
+                'orders.client_user_id',
+                'orders.shipper_user_id',
+                'orders.total_amount',
+                'orders.shipping_fee',
+                'orders.commission_amount',
+                'orders.company_amount',
+                'orders.cod_amount',
+                'orders.is_shipper_collected',
+                'orders.order_note',
+                'orders.latest_status_note',
+            ]),
+            'orders.client:id,name',
+            'orders.shipper:id,name',
+        ]);
+    }
+
+    private function settlementDetailsPayload(Request $request, ClientSettlement $clientSettlement): array
+    {
+        $this->loadSettlementOrderRelations($clientSettlement);
+
+        $totals = $this->calculateSettlementTotalsFromOrders($clientSettlement->orders);
+        $result = $this->filterVisibleColumns($request, $clientSettlement);
+
+        if (array_key_exists('total_amount', $result)) {
+            $result['total_amount'] = $totals['total_amount'];
+        }
+
+        if (array_key_exists('fees', $result)) {
+            $result['fees'] = $totals['fees'];
+        }
+
+        if (array_key_exists('net_amount', $result)) {
+            $result['net_amount'] = $totals['net_amount'];
+        }
+
+        if (array_key_exists('number_of_orders', $result)) {
+            $result['number_of_orders'] = $totals['number_of_orders'];
+        }
+
+        $result['orders'] = $clientSettlement->orders;
+
+        return $result;
+    }
+
+    private function refreshStoredSettlementTotals(ClientSettlement $settlement): void
+    {
+        $totals = $this->calculateSettlementTotalsFromQuery($settlement);
+
+        $settlement->update([
+            'total_amount' => $totals['total_amount'],
+            'fees' => $totals['fees'],
+            'net_amount' => $totals['net_amount'],
+            'number_of_orders' => $totals['number_of_orders'],
+        ]);
+    }
+
+    private function calculateSettlementTotalsFromQuery(ClientSettlement $settlement): array
+    {
+        $totals = ClientSettlementOrder::query()
+            ->join('orders', 'orders.id', '=', 'client_settlement_orders.order_id')
+            ->where('client_settlement_orders.client_settlement_id', $settlement->id)
+            ->selectRaw('COALESCE(SUM(orders.total_amount), 0) as total_amount, COALESCE(SUM(orders.shipping_fee), 0) as fees, COALESCE(SUM(orders.cod_amount), 0) as net_amount, COUNT(orders.id) as number_of_orders')
+            ->first();
+
+        return $this->calculateSettlementTotalsFromOrderSums(
+            (float) ($totals->total_amount ?? 0),
+            (float) ($totals->fees ?? 0),
+            (float) ($totals->net_amount ?? 0),
+            (int) ($totals->number_of_orders ?? 0),
+        );
+    }
+
+    private function calculateSettlementTotalsFromOrders(Collection $orders): array
+    {
+        return $this->calculateSettlementTotalsFromOrderSums(
+            (float) $orders->sum('total_amount'),
+            (float) $orders->sum('shipping_fee'),
+            (float) $orders->sum('cod_amount'),
+            $orders->count(),
+        );
+    }
+
+    private function calculateSettlementTotalsFromOrderSums(float $totalAmount, float $fees, float $netAmount, int $numberOfOrders): array
+    {
+        return [
+            'total_amount' => round($totalAmount, 2),
+            'fees' => round($fees, 2),
+            'net_amount' => round($netAmount, 2),
+            'number_of_orders' => $numberOfOrders,
+        ];
     }
 }

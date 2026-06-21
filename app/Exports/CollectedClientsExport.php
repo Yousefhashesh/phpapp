@@ -3,14 +3,14 @@
 namespace App\Exports;
 
 use App\Models\ClientSettlement;
-use Maatwebsite\Excel\Concerns\FromCollection;
+use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\Exportable;
+use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
-use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
-use Illuminate\Support\Collection;
 
 class CollectedClientsExport implements FromCollection, WithHeadings, WithMapping, WithStyles, ShouldAutoSize
 {
@@ -27,24 +27,17 @@ class CollectedClientsExport implements FromCollection, WithHeadings, WithMappin
 
     public function collection(): Collection
     {
-        $query = null;
-
-        if ($this->ids && count($this->ids) > 0) {
-            $query = ClientSettlement::query()
-                ->with(['client', 'orders.client', 'orders.governorate', 'orders.city', 'orders.shipper'])
-                ->whereIn('id', $this->ids)
-                ->latest();
-        } else {
-            $query = $this->query
-                ? $this->query->with(['client', 'orders.client', 'orders.governorate', 'orders.city', 'orders.shipper'])
-                : ClientSettlement::query()
-                    ->with(['client', 'orders.client', 'orders.governorate', 'orders.city', 'orders.shipper'])
-                    ->latest();
-        }
-
-        $settlements = $query->get();
+        $settlements = $this->baseQuery()
+            ->with([
+                'client:id,name',
+                'orders.governorate:id,name',
+                'orders.city:id,name',
+                'orders.shipper:id,name',
+            ])
+            ->get();
 
         $rows = collect();
+
         foreach ($settlements as $settlement) {
             foreach ($settlement->orders as $order) {
                 $rows->push((object) [
@@ -54,7 +47,7 @@ class CollectedClientsExport implements FromCollection, WithHeadings, WithMappin
                     'order_code' => $order->code,
                     'receiver' => $order->receiver_name,
                     'phone' => $order->phone,
-                    'area' => $order->governorate?->name . ' - ' . $order->city?->name,
+                    'area' => trim(($order->governorate?->name ?? '').' - '.($order->city?->name ?? ''), ' -'),
                     'shipper' => $order->shipper?->name,
                     'order_status' => $order->status,
                     'approval_status' => $order->approval_status,
@@ -73,21 +66,21 @@ class CollectedClientsExport implements FromCollection, WithHeadings, WithMappin
     public function headings(): array
     {
         return [
-            'رقم التسوية',
+            'كود التسوية',
             'التاريخ',
             'العميل',
-            'كود الأوردر',
+            'كود الاوردر',
             'المستلم',
-            'رقم الهاتف',
+            'الهاتف',
             'المنطقة',
             'المندوب',
-            'حالة الأوردر',
+            'حالة الاوردر',
             'الحالة',
-            'ملاحظات الأوردر',
-            'ملاحظات الحالة',
-            'الإجمالي',
-            'مصاريف الشحن',
-            'الصافي (COD)',
+            'ملاحظة الاوردر',
+            'ملاحظة الحالة',
+            'الاجمالي',
+            'الشحن',
+            'الصافي',
         ];
     }
 
@@ -119,9 +112,20 @@ class CollectedClientsExport implements FromCollection, WithHeadings, WithMappin
                 'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
                 'fill' => [
                     'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
-                    'startColor' => ['rgb' => '10B981'], // Green for settlements
+                    'startColor' => ['rgb' => '10B981'],
                 ],
             ],
         ];
+    }
+
+    private function baseQuery()
+    {
+        if ($this->ids && count($this->ids) > 0) {
+            return ClientSettlement::query()
+                ->whereIn('id', $this->ids)
+                ->latest();
+        }
+
+        return $this->query ?: ClientSettlement::query()->latest();
     }
 }

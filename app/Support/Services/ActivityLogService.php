@@ -21,12 +21,12 @@ class ActivityLogService
 
         return ActivityLog::create([
             'user_id' => $user?->id,
-            'login_session_id' => $user?->loginSessions()?->latest()?->first()?->id,
+            'login_session_id' => $request?->attributes->get('login_session_id'),
             'event_type' => class_basename($model),
             'entity_type' => class_basename($model),
             'entity_id' => $model->id,
             'action' => $action,
-            'label' => $label ?? "{$action} " . class_basename($model) . " #{$model->id}",
+            'label' => $label ?? "{$action} ".class_basename($model)." #{$model->id}",
             'old_values' => $oldValues,
             'new_values' => $newValues,
             'meta' => $meta,
@@ -42,7 +42,7 @@ class ActivityLogService
             'created',
             oldValues: null,
             newValues: $model->getAttributes(),
-            label: $label ?? "Created " . class_basename($model),
+            label: $label ?? 'Created '.class_basename($model),
             meta: $meta,
         );
     }
@@ -59,7 +59,7 @@ class ActivityLogService
             'updated',
             oldValues: $oldValues,
             newValues: $newValues,
-            label: $label ?? "Updated " . class_basename($model),
+            label: $label ?? 'Updated '.class_basename($model),
             meta: $meta,
         );
     }
@@ -71,7 +71,7 @@ class ActivityLogService
             'deleted',
             oldValues: $model->getAttributes(),
             newValues: null,
-            label: $label ?? "Deleted " . class_basename($model),
+            label: $label ?? 'Deleted '.class_basename($model),
             meta: $meta,
         );
     }
@@ -104,7 +104,7 @@ class ActivityLogService
             $action,
             oldValues: null,
             newValues: null,
-            label: $label ?? "{$action} " . class_basename($model),
+            label: $label ?? "{$action} ".class_basename($model),
             meta: $meta,
         );
     }

@@ -19,6 +19,7 @@ use App\Models\ShipperCollectionOrder;
 use App\Support\Permissions\OrdersPermissionMap;
 use App\Support\Services\FinancialFormulaService;
 use App\Traits\ChecksWorkingHours;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Http\JsonResponse;
@@ -104,7 +105,7 @@ class OrderController extends Controller
 
         $this->authorizeEditableColumns($request, array_keys($data));
 
-       // $this->authorizeClientShipperMatchesGovernorate($request, $data);
+        // $this->authorizeClientShipperMatchesGovernorate($request, $data);
 
         $data = $this->resolveDefaultShipper($data);
         $data = $this->applyAutomaticFinancials($data);
@@ -193,26 +194,26 @@ class OrderController extends Controller
         //     'latest_status_note' => ['nullable', 'string'],
         //     'order_note' => ['nullable', 'string'],
         // ]);
-$data = $request->validate([
-    'external_code' => ['sometimes', 'nullable', 'string'],
-    'receiver_name' => ['sometimes', 'required', 'string', 'max:255'],
-    'phone' => ['sometimes', 'required', 'string', 'max:30'],
-    'phone_2' => ['sometimes', 'nullable', 'string', 'max:30'],
-    'address' => ['sometimes', 'required', 'string'],
-    'governorate_id' => ['sometimes', 'required', 'exists:governorates,id'],
-    'city_id' => ['sometimes', 'required', 'exists:cities,id'],
-    'shipper_user_id' => ['sometimes', 'nullable', 'exists:users,id'],
-    'shipping_content_id' => ['sometimes', 'nullable', 'integer', 'exists:content,id'],
-    'total_amount' => ['sometimes', 'required', 'numeric', 'min:0'],
-    'shipping_fee' => ['sometimes', 'nullable', 'numeric', 'min:0'],
-    'commission_amount' => ['sometimes', 'nullable', 'numeric', 'min:0'],
-    'company_amount' => ['sometimes', 'nullable', 'numeric', 'min:0'],
-    'cod_amount' => ['sometimes', 'nullable', 'numeric', 'min:0'],
-    'status' => ['sometimes', 'required', Rule::in(['OUT_FOR_DELIVERY', 'DELIVERED', 'HOLD', 'UNDELIVERED'])],
-    'allow_open' => ['sometimes', 'boolean'],
-    'latest_status_note' => ['nullable', 'string'],
-    'order_note' => ['nullable', 'string'],
-]);
+        $data = $request->validate([
+            'external_code' => ['sometimes', 'nullable', 'string'],
+            'receiver_name' => ['sometimes', 'required', 'string', 'max:255'],
+            'phone' => ['sometimes', 'required', 'string', 'max:30'],
+            'phone_2' => ['sometimes', 'nullable', 'string', 'max:30'],
+            'address' => ['sometimes', 'required', 'string'],
+            'governorate_id' => ['sometimes', 'required', 'exists:governorates,id'],
+            'city_id' => ['sometimes', 'required', 'exists:cities,id'],
+            'shipper_user_id' => ['sometimes', 'nullable', 'exists:users,id'],
+            'shipping_content_id' => ['sometimes', 'nullable', 'integer', 'exists:content,id'],
+            'total_amount' => ['sometimes', 'required', 'numeric', 'min:0'],
+            'shipping_fee' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+            'commission_amount' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+            'company_amount' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+            'cod_amount' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+            'status' => ['sometimes', 'required', Rule::in(['OUT_FOR_DELIVERY', 'DELIVERED', 'HOLD', 'UNDELIVERED'])],
+            'allow_open' => ['sometimes', 'boolean'],
+            'latest_status_note' => ['nullable', 'string'],
+            'order_note' => ['nullable', 'string'],
+        ]);
         $this->authorizeEditableColumns($request, array_keys($data));
         $this->authorizeFinancialDocumentOrderUpdate($order, $data);
 
@@ -224,7 +225,7 @@ $data = $request->validate([
             $this->authorizeRevertToActiveDeliveryStatus($order, $data['status']);
         }
 
-      //  $this->authorizeClientShipperMatchesGovernorate($request, $data, $order);
+        //  $this->authorizeClientShipperMatchesGovernorate($request, $data, $order);
 
         $this->authorizePriceEditOnFinalStatus($order, $data);
 
@@ -343,7 +344,7 @@ $data = $request->validate([
         }
 
         if (array_key_exists('has_return', $data)) {
-            $payload['has_return'] = (bool)$data['has_return'];
+            $payload['has_return'] = (bool) $data['has_return'];
             if ($payload['has_return']) {
                 $payload['has_return_at'] = now();
             } else {
@@ -354,7 +355,7 @@ $data = $request->validate([
             $payload['has_return_at'] = now();
         }
 
-        if (!$isClear) {
+        if (! $isClear) {
             if (! $allowsEditAmount && array_key_exists('total_amount', $data)) {
                 throw ValidationException::withMessages([
                     'total_amount' => ['total_amount can only be edited when one of the selected reasons allows amount edit.'],
@@ -397,8 +398,8 @@ $data = $request->validate([
         ];
 
         $payload = $this->resolveDefaultShipper($payload, $order);
-      //  $this->authorizeClientShipperMatchesGovernorate($request, $payload, $order);
-        
+        //  $this->authorizeClientShipperMatchesGovernorate($request, $payload, $order);
+
         if (array_key_exists('shipper_date', $data) && $data['shipper_date']) {
             $payload['shipper_date'] = $data['shipper_date'];
         } else {
@@ -534,14 +535,14 @@ $data = $request->validate([
                 ];
 
                 $payload = $this->resolveDefaultShipper($payload, $order);
-              //  $this->authorizeClientShipperMatchesGovernorate(request(), $payload, $order);
-                
+                //  $this->authorizeClientShipperMatchesGovernorate(request(), $payload, $order);
+
                 if (array_key_exists('shipper_date', $data) && $data['shipper_date']) {
                     $payload['shipper_date'] = $data['shipper_date'];
                 } else {
                     $payload['shipper_date'] = $payload['shipper_user_id'] ? now()->toDateString() : null;
                 }
-                
+
                 if (array_key_exists('commission_amount', $data) && $data['commission_amount'] !== null && $data['commission_amount'] !== '') {
                     $payload['commission_amount'] = $data['commission_amount'];
                     $payload['company_amount'] = ($order->total_amount ?? 0) - $payload['commission_amount'];
@@ -578,8 +579,8 @@ $data = $request->validate([
         ]);
 
         $reasonIds = $data['refused_reason_ids'] ?? (isset($data['refused_reason_id']) ? [$data['refused_reason_id']] : []);
-        $refusedReasons = collect($reasonIds)->map(fn($id) => RefusedReason::find($id))->filter();
-        
+        $refusedReasons = collect($reasonIds)->map(fn ($id) => RefusedReason::find($id))->filter();
+
         $allowsEditAmount = $refusedReasons->contains('is_edit_amount', true);
         $isClear = $refusedReasons->contains('is_clear', true);
 
@@ -633,18 +634,18 @@ $data = $request->validate([
                     $payload['has_return_at'] = now();
                 }
 
-                if (!$isClear && $allowsEditAmount && array_key_exists('total_amount', $data)) {
+                if (! $isClear && $allowsEditAmount && array_key_exists('total_amount', $data)) {
                     $payload['total_amount'] = $data['total_amount'];
                 }
 
                 $this->authorizeEditableColumns(request(), array_keys($payload));
                 $this->authorizeNoPriceEditOnFinalStatus($order, $payload);
-                
+
                 $payload = $this->applyAutomaticFinancials($payload, $order);
 
                 $order->update($payload);
                 $order->refusedReasons()->sync($reasonIds);
-                
+
                 $result[] = $order->id;
             }
 
@@ -675,7 +676,7 @@ $data = $request->validate([
                 if (! $order instanceof Order) {
                     continue;
                 }
-                
+
                 $this->markOrderApproved($request, $order);
                 $result[] = $order->id;
             }
@@ -810,7 +811,6 @@ $data = $request->validate([
         ]);
     }
 
-
     // =========================================================================
     // Order Visibility & Tools
     // =========================================================================
@@ -829,10 +829,10 @@ $data = $request->validate([
         $perPage = $validated['per_page'] ?? 100;
 
         $orders = Order::query()
-        ->forUserRole()
-        ->with(['governorate:id,name', 'city:id,name', 'shipper:id,name', 'client:id,name', 'shippingContent:id,name'])
-        ->whereNotIn('status', self::FINAL_STATUSES)
-        ->orderByDesc('id')
+            ->forUserRole()
+            ->with(['governorate:id,name', 'city:id,name', 'shipper:id,name', 'client:id,name', 'shippingContent:id,name'])
+            ->whereNotIn('status', self::FINAL_STATUSES)
+            ->orderByDesc('id')
             ->paginate($perPage)
             ->appends($request->query())
             ->through(fn (Order $order): array => $this->formatMyOrderRow($order));
@@ -1130,7 +1130,7 @@ $data = $request->validate([
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
             'page' => ['nullable', 'integer', 'min:1'],
             'q' => ['nullable', 'string', 'max:255'],
-            
+
             // Allow top-level filters for compatibility
             'code' => ['nullable', 'string', 'max:255'],
             'external_code' => ['nullable', 'string', 'max:255'],
@@ -1181,7 +1181,7 @@ $data = $request->validate([
             'search.approval_status' => ['nullable', Rule::in(['PENDING', 'APPROVED', 'REJECTED'])],
             'search.governorate_id' => ['nullable', 'integer', 'exists:governorates,id'],
             'search.city_id' => ['nullable', 'integer', 'exists:cities,id'],
-            'search.shipper_user_id' => ['nullable', 'stting'],
+            'search.shipper_user_id' => ['nullable', 'string'],
             'search.client_user_id' => ['nullable', 'string'],
             'search.allow_open' => ['nullable', 'boolean'],
             'search.collection_state' => ['nullable', Rule::in(['not_collected', 'ready_to_collect', 'collected'])],
@@ -1249,14 +1249,6 @@ $data = $request->validate([
             ],
         ];
     }
-
-
-
-
-
-
-
-
 
     private function authorizePermission(Request $request, string $permission): void
     {
@@ -1485,7 +1477,7 @@ $data = $request->validate([
 
         if ($generalSearch !== '') {
             $query->where(function (Builder $builder) use ($generalSearch): void {
-                $anyLike = '%' . $generalSearch . '%';
+                $anyLike = '%'.$generalSearch.'%';
                 $builder->where('code', 'like', $anyLike)
                     ->orWhere('external_code', 'like', $anyLike)
                     ->orWhere('total_amount', 'like', $anyLike)
@@ -1504,6 +1496,16 @@ $data = $request->validate([
                     ->orWhereHas('city', fn (Builder $q) => $q->where('name', 'like', $anyLike))
                     ->orWhereHas('shipper', fn (Builder $q) => $q->where('name', 'like', $anyLike))
                     ->orWhereHas('client', fn (Builder $q) => $q->where('name', 'like', $anyLike));
+
+                $date = $this->parseFlexibleSearchDate($generalSearch);
+                if ($date !== null) {
+                    $builder->orWhereDate('created_at', $date)
+                        ->orWhereDate('registered_at', $date)
+                        ->orWhereDate('captain_date', $date)
+                        ->orWhereDate('shipper_date', $date)
+                        ->orWhereDate('shipper_collected_at', $date)
+                        ->orWhereDate('client_settled_at', $date);
+                }
             });
         }
 
@@ -1537,7 +1539,9 @@ $data = $request->validate([
         ];
 
         foreach ($statusSources as $s) {
-            if ($s === null || $s === '') continue;
+            if ($s === null || $s === '') {
+                continue;
+            }
             if (is_string($s) && str_contains($s, ',')) {
                 $s = explode(',', $s);
             }
@@ -1563,7 +1567,9 @@ $data = $request->validate([
         ];
 
         foreach ($approvalSources as $s) {
-            if ($s === null || $s === '') continue;
+            if ($s === null || $s === '') {
+                continue;
+            }
             if (is_string($s) && str_contains($s, ',')) {
                 $s = explode(',', $s);
             }
@@ -1642,9 +1648,9 @@ $data = $request->validate([
         // 4. Handle removed flags via relationships
         $dynamicRelationMap = [
             'is_in_shipper_collection' => ['relation' => 'shipperCollections', 'table' => 'shipper_collections'],
-            'is_in_client_settlement'   => ['relation' => 'clientSettlements', 'table' => 'client_settlements'],
-            'is_in_shipper_return'      => ['relation' => 'shipperReturns', 'table' => 'shipper_returns'],
-            'is_in_client_return'       => ['relation' => 'clientReturns', 'table' => 'client_returns'],
+            'is_in_client_settlement' => ['relation' => 'clientSettlements', 'table' => 'client_settlements'],
+            'is_in_shipper_return' => ['relation' => 'shipperReturns', 'table' => 'shipper_returns'],
+            'is_in_client_return' => ['relation' => 'clientReturns', 'table' => 'client_returns'],
         ];
 
         foreach ($dynamicRelationMap as $filter => $config) {
@@ -1681,24 +1687,24 @@ $data = $request->validate([
             $value = explode(',', $value);
         }
 
-            if ($filter === 'shipper_user_id' && is_string($value) && ! is_numeric($value)) {
-        $name = trim($value);
+        if ($filter === 'shipper_user_id' && is_string($value) && ! is_numeric($value)) {
+            $name = trim($value);
 
-        $query->whereHas('shipper', function (Builder $q) use ($name): void {
-            $q->where('name', 'like', '%'.$name.'%');
-        });
+            $query->whereHas('shipper', function (Builder $q) use ($name): void {
+                $q->where('name', 'like', '%'.$name.'%');
+            });
 
-        return;
-    }
+            return;
+        }
         if ($filter === 'client_user_id' && is_string($value) && ! is_numeric($value)) {
-        $name = trim($value);
+            $name = trim($value);
 
-        $query->whereHas('client', function (Builder $q) use ($name): void {
-            $q->where('name', 'like', '%'.$name.'%');
-        });
+            $query->whereHas('client', function (Builder $q) use ($name): void {
+                $q->where('name', 'like', '%'.$name.'%');
+            });
 
-        return;
-    }
+            return;
+        }
 
         if ($filter === 'code' && is_string($value)) {
             $like = '%'.$value.'%';
@@ -1722,7 +1728,13 @@ $data = $request->validate([
         }
 
         if ($filter === 'shipper_date' && is_string($value)) {
-            $query->where('shipper_date', 'like', '%'.$value.'%');
+            $date = $this->parseFlexibleSearchDate($value);
+
+            if ($date !== null) {
+                $query->whereDate('shipper_date', $date);
+            } else {
+                $query->where('shipper_date', 'like', '%'.$value.'%');
+            }
 
             return;
         }
@@ -1746,6 +1758,42 @@ $data = $request->validate([
         }
 
         $query->where($filter, $value);
+    }
+
+    private function parseFlexibleSearchDate(string $value): ?string
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return null;
+        }
+
+        $normalized = str_replace(['\\', '.', ' '], ['/', '/', ''], $value);
+        $formats = [
+            'Y-m-d',
+            'Y/n/j',
+            'Y/m/d',
+            'd-m-Y',
+            'j-n-Y',
+            'd/m/Y',
+            'j/n/Y',
+            'd-m-y',
+            'j-n-y',
+            'd/m/y',
+            'j/n/y',
+        ];
+
+        foreach ($formats as $format) {
+            try {
+                $date = Carbon::createFromFormat($format, $normalized);
+                if ($date !== false && $date->format($format) === $normalized) {
+                    return $date->toDateString();
+                }
+            } catch (\Throwable) {
+                continue;
+            }
+        }
+
+        return null;
     }
 
     private function resolveCollectionState(Order $order): string
@@ -1825,8 +1873,28 @@ $data = $request->validate([
             ]);
         }
 
-        $shippingFee = $data['shipping_fee'] ?? $this->resolveShippingFee((int) $clientUserId, (int) $governorateId);
-        $commissionAmount = $data['commission_amount'] ?? $this->resolveCommissionAmount($shipperUserId ? (int) $shipperUserId : null);
+        $shouldResolveShippingFee = $order === null
+            || array_key_exists('client_user_id', $data)
+            || array_key_exists('governorate_id', $data);
+
+        $shouldResolveCommissionAmount = $order === null
+            || array_key_exists('shipper_user_id', $data);
+
+        if (array_key_exists('shipping_fee', $data)) {
+            $shippingFee = $data['shipping_fee'];
+        } elseif ($shouldResolveShippingFee) {
+            $shippingFee = $this->resolveShippingFee((int) $clientUserId, (int) $governorateId);
+        } else {
+            $shippingFee = $order?->shipping_fee;
+        }
+
+        if (array_key_exists('commission_amount', $data)) {
+            $commissionAmount = $data['commission_amount'];
+        } elseif ($shouldResolveCommissionAmount) {
+            $commissionAmount = $this->resolveCommissionAmount($shipperUserId ? (int) $shipperUserId : null);
+        } else {
+            $commissionAmount = $order?->commission_amount;
+        }
 
         // Fallback: If no plan assigned to client, use the representative's commission as the shipping fee
         if ($shippingFee === null) {
@@ -2005,7 +2073,6 @@ $data = $request->validate([
         ];
     }
 
-
     /**
      * Recalculate pivot records and parent totals for any active financial documents
      * (shipper collections and client settlements) containing this order.
@@ -2018,7 +2085,7 @@ $data = $request->validate([
         $collectionPivots = ShipperCollectionOrder::where('order_id', $order->id)->get();
         foreach ($collectionPivots as $pivot) {
             $collection = ShipperCollection::find($pivot->shipper_collection_id);
-            if (!$collection || $collection->status === 'CANCELLED') {
+            if (! $collection || $collection->status === 'CANCELLED') {
                 continue;
             }
 
@@ -2035,21 +2102,17 @@ $data = $request->validate([
             $pivot->update([
                 'order_amount' => $order->total_amount,
                 'shipper_fee' => $order->commission_amount,
-                'net_amount' => round(max($newNetAmount, 0), 2),
+                'net_amount' => round($newNetAmount, 2),
             ]);
 
-            // Recalculate collection totals from all its pivot records
-            // net_amount على مستوى الكوليكشن = MAX(total_amount - shipper_fees, 0)
-            // وليس SUM(per-pivot MAX(net,0)) لأن الحصر per-order بيضيف قيم إضافية
-            // مثال: order.total=0, commission=50 → per-pivot net=0 لكن commission متحسبة
-            // فـ SUM net_amounts = 425 بدل 520-245=275 الصح
+            // Recalculate collection totals from all its pivot records.
             $allPivots = ShipperCollectionOrder::where('shipper_collection_id', $collection->id)->get();
-            $collectionTotalAmount  = round($allPivots->sum('order_amount'), 2);
-            $collectionShipperFees  = round($allPivots->sum('shipper_fee'), 2);
+            $collectionTotalAmount = round($allPivots->sum('order_amount'), 2);
+            $collectionShipperFees = round($allPivots->sum('shipper_fee'), 2);
             $collection->update([
-                'total_amount'   => $collectionTotalAmount,
-                'shipper_fees'   => $collectionShipperFees,
-                'net_amount'     => round(max($collectionTotalAmount - $collectionShipperFees, 0), 2),
+                'total_amount' => $collectionTotalAmount,
+                'shipper_fees' => $collectionShipperFees,
+                'net_amount' => round($collectionTotalAmount - $collectionShipperFees, 2),
                 'number_of_orders' => $allPivots->count(),
             ]);
         }
@@ -2058,7 +2121,7 @@ $data = $request->validate([
         $settlementPivots = ClientSettlementOrder::where('order_id', $order->id)->get();
         foreach ($settlementPivots as $pivot) {
             $settlement = ClientSettlement::find($pivot->client_settlement_id);
-            if (!$settlement || $settlement->status === 'CANCELLED') {
+            if (! $settlement || $settlement->status === 'CANCELLED') {
                 continue;
             }
 
@@ -2075,7 +2138,7 @@ $data = $request->validate([
             $pivot->update([
                 'order_amount' => $order->total_amount,
                 'fee' => $order->shipping_fee,
-                'net_amount' => round(max($newNetAmount, 0), 2),
+                'net_amount' => round($newNetAmount, 2),
             ]);
 
             // Recalculate settlement totals from all its pivot records
@@ -2083,10 +2146,9 @@ $data = $request->validate([
             $settlement->update([
                 'total_amount' => round($allPivots->sum('order_amount'), 2),
                 'fees' => round($allPivots->sum('fee'), 2),
-                'net_amount' => round(max($allPivots->sum('net_amount'), 0), 2),
+                'net_amount' => round($allPivots->sum('net_amount'), 2),
                 'number_of_orders' => $allPivots->count(),
             ]);
         }
     }
-
 }

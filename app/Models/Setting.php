@@ -6,11 +6,24 @@ use Illuminate\Database\Eloquent\Model;
 
 class Setting extends Model
 {
+    private static array $valueCache = [];
+
     protected $fillable = [
         'group',
         'key',
         'value',
     ];
+
+    protected static function booted(): void
+    {
+        static::saved(static function (Setting $setting): void {
+            unset(self::$valueCache[$setting->key]);
+        });
+
+        static::deleted(static function (Setting $setting): void {
+            unset(self::$valueCache[$setting->key]);
+        });
+    }
 
     public static function getDefaults(): array
     {
@@ -118,18 +131,22 @@ class Setting extends Model
 
     public static function getValue(string $key, $default = null): mixed
     {
+        if (array_key_exists($key, self::$valueCache)) {
+            return self::$valueCache[$key];
+        }
+
         $setting = self::query()->where('key', $key)->first();
 
         if ($setting) {
-            return $setting->value;
+            return self::$valueCache[$key] = $setting->value;
         }
 
         if ($default !== null) {
-            return $default;
+            return self::$valueCache[$key] = $default;
         }
 
         $allDefaults = self::getDefaults();
 
-        return $allDefaults[$key] ?? null;
+        return self::$valueCache[$key] = $allDefaults[$key] ?? null;
     }
 }

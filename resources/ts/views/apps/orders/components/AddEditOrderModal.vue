@@ -19,6 +19,7 @@ const { t } = useI18n()
 const isFormValid = ref(false)
 const refForm = ref()
 const isLoading = ref(false)
+const isHydratingOrder = ref(false)
 
 const orderData = ref<any>({
   code: '',
@@ -141,9 +142,26 @@ const filteredShippers = computed(() => {
   return shippers.value.filter((shipper: any) => assignedShipperIds.includes(Number(shipper.id)))
 })
 
+const resolveClientShippingFee = (client: any, governorateId: any) => {
+  if (!client)
+    return null
+
+  if (governorateId && client.plan_id) {
+    const plan = plans.value.find(p => Number(p.id) === Number(client.plan_id))
+    const priceObj = plan?.prices?.find((p: any) => Number(p.governorate_id) === Number(governorateId))
+    if (priceObj)
+      return Number(priceObj.price)
+  }
+
+  return client.shipping_fee !== undefined && client.shipping_fee !== null && client.shipping_fee !== ''
+    ? Number(client.shipping_fee)
+    : null
+}
+
 //    Auto-fill logic based on Client/Gov/Shipper selection
 watch([() => orderData.value.client_user_id, () => orderData.value.governorate_id], ([newClient, newGov]) => {
-  if (props.orderId) return
+  if (isHydratingOrder.value)
+    return
 
   if (newGov && orderData.value.shipper_user_id && !filteredShippers.value.some((s: any) => Number(s.id) === Number(orderData.value.shipper_user_id))) {
     orderData.value.shipper_user_id = null
@@ -151,28 +169,20 @@ watch([() => orderData.value.client_user_id, () => orderData.value.governorate_i
   }
   
   if (newClient) {
-    const client = clients.value.find(c => c.id === newClient)
+    const client = clients.value.find(c => Number(c.id) === Number(newClient))
     if (client) {
       if (client.shipping_content_id && !orderData.value.shipping_content_id) orderData.value.shipping_content_id = client.shipping_content_id
-      
-      if (newGov && client.plan_id) {
-        const plan = plans.value.find(p => p.id === client.plan_id)
-        if (plan && plan.prices) {
-          const priceObj = plan.prices.find((p: any) => p.governorate_id === newGov)
-          if (priceObj) {
-            orderData.value.shipping_fee = priceObj.price
-          } else if (client.shipping_fee) {
-            orderData.value.shipping_fee = client.shipping_fee
-          }
-        }
-      }
+
+      const shippingFee = resolveClientShippingFee(client, newGov)
+      if (shippingFee !== null)
+        orderData.value.shipping_fee = shippingFee
     }
   }
 })
 
 watch(() => orderData.value.shipper_user_id, (newShipper) => {
-  if (props.orderId || !newShipper) return
-  const shipper = shippers.value.find(s => s.id === newShipper)
+  if (isHydratingOrder.value || !newShipper) return
+  const shipper = shippers.value.find(s => Number(s.id) === Number(newShipper))
   if (shipper && shipper.commission_rate !== undefined) {
     orderData.value.commission_amount = shipper.commission_rate
   }
@@ -181,6 +191,7 @@ watch(() => orderData.value.shipper_user_id, (newShipper) => {
 watch(() => props.orderId, async (newVal) => {
   if (newVal) {
     isLoading.value = true
+    isHydratingOrder.value = true
     try {
       const { data } = await useApi<any>(`/orders/${newVal}`).get().json()
       if (data.value) {
@@ -189,8 +200,10 @@ watch(() => props.orderId, async (newVal) => {
         if (orderData.value.captain_date) orderData.value.captain_date = orderData.value.captain_date.substr(0, 10)
       }
     } catch (e) { console.error('Edit order fetch error:', e) }
+    isHydratingOrder.value = false
     isLoading.value = false
   } else {
+    isHydratingOrder.value = true
     orderData.value = {
       code: '', external_code: '', registered_at: new Date().toISOString().substr(0, 10), captain_date: null,
       receiver_name: '', phone: '', phone_2: '', address: '', governorate_id: null, city_id: null,
@@ -199,6 +212,9 @@ watch(() => props.orderId, async (newVal) => {
       client_user_id: isClientUser.value ? (userData.value?.id ?? null) : null,
       shipping_content_id: null, allow_open: true, order_note: '',
     }
+    nextTick(() => {
+      isHydratingOrder.value = false
+    })
   }
 }, { immediate: true })
 

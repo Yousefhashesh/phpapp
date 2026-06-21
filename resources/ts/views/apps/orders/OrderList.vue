@@ -81,7 +81,7 @@ watch(searchQuery, val => {
   searchTimer = setTimeout(() => {
     searchQueryDebounced.value = val
     page.value = 1
-  }, 400)
+  }, 650)
 })
 
 const openStatusModal = (order: any) => {
@@ -589,6 +589,7 @@ const resetFilters = () => {
   selectedClient.value = props.clientId ? Number(props.clientId) : null
   filters.value = {
     code: '',
+    shipper_date: '',
     receiver_name: '',
     address: '',
     order_note: '',

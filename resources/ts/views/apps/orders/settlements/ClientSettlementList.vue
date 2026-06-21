@@ -298,11 +298,14 @@ import ClientSettlementModal from "./ClientSettlementModal.vue";
 
 const onSettlementCreated = (settlement?: any) => {
   if (settlement && settlementsData.value?.data) {
-    settlementsData.value.data.unshift(settlement)
+    settlementsData.value.data = [
+      settlement,
+      ...settlementsData.value.data.filter((item: any) => item.id !== settlement.id),
+    ]
     flash(`settlement-${settlement.id}`)
-  } else {
-    fetchSettlements()
   }
+
+  fetchSettlements()
 }
 
 const bulkUpdateStatus = async (status: string) => {

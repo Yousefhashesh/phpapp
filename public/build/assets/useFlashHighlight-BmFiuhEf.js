@@ -1,0 +1,1 @@
+import{bv as n}from"./main-D1EbkRzN.js";function u(a=2e3){const e=n(new Set);return{flash:s=>{e.value=new Set([...e.value,s]),window.setTimeout(()=>{const t=new Set(e.value);t.delete(s),e.value=t},a)},isFlashing:s=>e.value.has(s)}}export{u};

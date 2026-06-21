@@ -2,6 +2,7 @@
 
 namespace App\Support\Services;
 
+use App\Jobs\SendWhatsAppGroupMessage;
 use App\Models\ClientReturn;
 use App\Models\ClientSettlement;
 use App\Models\Order;
@@ -24,6 +25,33 @@ class WhatsAppService
     }
 
     public function sendGroupMessage(string $message, ?array $groupIds = null): bool
+    {
+        if (! $this->isEnabled()) {
+            return false;
+        }
+
+        if ($groupIds === null) {
+            $groupIdsString = Setting::getValue('whatsapp_group_id', config('whatsapp.group_id'));
+            if (! filled($groupIdsString)) {
+                return false;
+            }
+
+            $groupIds = array_filter(array_map('trim', explode(',', (string) $groupIdsString)));
+        }
+
+        if (empty($groupIds)) {
+            return false;
+        }
+
+        SendWhatsAppGroupMessage::dispatch($message, array_values($groupIds));
+
+        return true;
+    }
+
+    /**
+     * @param  array<int, string>|null  $groupIds
+     */
+    public function sendGroupMessageNow(string $message, ?array $groupIds = null): bool
     {
         if (! $this->isEnabled()) {
             return false;
@@ -70,14 +98,14 @@ class WhatsAppService
                 }
 
                 if (! $response->successful()) {
-                    Log::warning('WhatsApp service error for group: ' . $groupId, [
+                    Log::warning('WhatsApp service error for group: '.$groupId, [
                         'status' => $response->status(),
                         'body' => $response->body(),
                     ]);
                     $success = false;
                 }
             } catch (\Throwable $exception) {
-                Log::warning('WhatsApp service unreachable for group: ' . $groupId, [
+                Log::warning('WhatsApp service unreachable for group: '.$groupId, [
                     'message' => $exception->getMessage(),
                 ]);
                 $success = false;
@@ -110,7 +138,7 @@ class WhatsAppService
             '━━━━━━━━━━━━━━━━',
             "الكود: *#{$order->code}*",
             "الكود الخارجي: *#{$order->external_code}*",
-          //  "الإجراء: {$this->resolveActionLabel($action, $oldValues, $newValues)}",
+            //  "الإجراء: {$this->resolveActionLabel($action, $oldValues, $newValues)}",
         ];
 
         if ($action === 'created') {
@@ -130,16 +158,15 @@ class WhatsAppService
                 $lines[] = $this->formatFieldChange($order, $field, $oldValue, $newValue);
             }
         }
-       
-        
-            $lines[] = "العميل: ".($order->client?->name ?? '—');
-              $lines[] = "المستلم: {$order->receiver_name}";
-            $lines[] = "الهاتف: {$order->phone}";
-             $lines[] = "الهاتف الثاني: {$order->phone_2}";
-            $lines[] = "العنوان   :".($order->address ?? '—');
-           $lines[] = "ملاحظات حالة الاوردر :".($order->latest_status_note ?? '—');
-            $lines[] = "ملاحظات   :".($order->note ?? '—');
-       // $lines[] = "المندوب: ".($order->shipper?->name ?? '—');
+
+        $lines[] = 'العميل: '.($order->client?->name ?? '—');
+        $lines[] = "المستلم: {$order->receiver_name}";
+        $lines[] = "الهاتف: {$order->phone}";
+        $lines[] = "الهاتف الثاني: {$order->phone_2}";
+        $lines[] = 'العنوان   :'.($order->address ?? '—');
+        $lines[] = 'ملاحظات حالة الاوردر :'.($order->latest_status_note ?? '—');
+        $lines[] = 'ملاحظات   :'.($order->note ?? '—');
+        // $lines[] = "المندوب: ".($order->shipper?->name ?? '—');
         // $lines[] = "بواسطة: {$actorName}";
         // $lines[] = 'الوقت: '.now()->timezone(config('app.timezone'))->format('d/m/Y H:i');
 
@@ -302,22 +329,22 @@ class WhatsAppService
     private function formatFieldChange(Order $order, string $field, mixed $oldValue, mixed $newValue): string
     {
         return match ($field) {
-            'status' => "الحالة: {$oldValue} → {$newValue}",
-            'total_amount' => "الإجمالي: {$oldValue} → {$newValue} ج.م",
-            'cod_amount' => "COD: {$oldValue} → {$newValue} ج.م",
-            'shipping_fee' => "الشحن: {$oldValue} → {$newValue} ج.م",
-            'commission_amount' => "العمولة: {$oldValue} → {$newValue} ج.م",
-            'company_amount' => "صافي الشركة: {$oldValue} → {$newValue} ج.م",
+            'status' => "الحالة:  {$newValue}",
+            'total_amount' => "الإجمالي:  {$newValue} ج.م",
+            'cod_amount' => "COD:  {$newValue} ج.م",
+            'shipping_fee' => "الشحن:  {$newValue} ج.م",
+            'commission_amount' => "العمولة:  {$newValue} ج.م",
+            'company_amount' => "صافي الشركة:  {$newValue} ج.م",
             'latest_status_note' => "ملاحظة الحالة: {$newValue}",
             'order_note' => "ملاحظة الأوردر: {$newValue}",
-            'receiver_name' => "المستلم: {$oldValue} → {$newValue}",
-            'phone' => "الموبايل: {$oldValue} → {$newValue}",
+            'receiver_name' => "المستلم:  {$newValue}",
+            'phone' => "الموبايل:  {$newValue}",
             'is_shipper_collected' => 'تحصيل المندوب: '.($newValue ? 'نعم' : 'لا'),
             'is_client_settled' => 'تسوية العميل: '.($newValue ? 'نعم' : 'لا'),
             'is_shipper_returned' => 'مرتجع المندوب: '.($newValue ? 'نعم' : 'لا'),
             'is_client_returned' => 'مرتجع العميل: '.($newValue ? 'نعم' : 'لا'),
             'shipper_user_id' => 'تم تعيين مندوب جديد',
-            default => "{$field}: {$oldValue} → {$newValue}",
+            default => "{$field}: {$newValue}",
         };
     }
 }

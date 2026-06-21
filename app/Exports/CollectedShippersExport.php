@@ -3,14 +3,14 @@
 namespace App\Exports;
 
 use App\Models\ShipperCollection;
-use Maatwebsite\Excel\Concerns\FromCollection;
+use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\Exportable;
+use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
-use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
-use Illuminate\Support\Collection;
 
 class CollectedShippersExport implements FromCollection, WithHeadings, WithMapping, WithStyles, ShouldAutoSize
 {
@@ -27,24 +27,17 @@ class CollectedShippersExport implements FromCollection, WithHeadings, WithMappi
 
     public function collection(): Collection
     {
-        $query = null;
-
-        if ($this->ids && count($this->ids) > 0) {
-            $query = ShipperCollection::query()
-                ->with(['shipper', 'orders.client', 'orders.governorate', 'orders.city'])
-                ->whereIn('id', $this->ids)
-                ->latest();
-        } else {
-            $query = $this->query
-                ? $this->query->with(['shipper', 'orders.client', 'orders.governorate', 'orders.city'])
-                : ShipperCollection::query()
-                    ->with(['shipper', 'orders.client', 'orders.governorate', 'orders.city'])
-                    ->latest();
-        }
-
-        $collections = $query->get();
+        $collections = $this->baseQuery()
+            ->with([
+                'shipper:id,name',
+                'orders.client:id,name',
+                'orders.governorate:id,name',
+                'orders.city:id,name',
+            ])
+            ->get();
 
         $rows = collect();
+
         foreach ($collections as $collection) {
             foreach ($collection->orders as $order) {
                 $rows->push((object) [
@@ -55,10 +48,10 @@ class CollectedShippersExport implements FromCollection, WithHeadings, WithMappi
                     'client' => $order->client?->name,
                     'receiver' => $order->receiver_name,
                     'phone' => $order->phone,
-                    'area' => $order->governorate?->name . ' - ' . $order->city?->name,
+                    'area' => trim(($order->governorate?->name ?? '').' - '.($order->city?->name ?? ''), ' -'),
                     'order_amount' => $order->total_amount,
-                    'shipping_fee' => $order->shipping_fee,
-                    'cod' => $order->cod_amount,
+                    'shipper_commission' => $order->commission_amount,
+                    'net' => round((float) $order->total_amount - (float) $order->commission_amount, 2),
                     'order_status' => $order->status,
                     'approval_status' => $order->approval_status,
                     'order_note' => $order->order_note,
@@ -76,18 +69,18 @@ class CollectedShippersExport implements FromCollection, WithHeadings, WithMappi
             'رقم التحصيل',
             'التاريخ',
             'المندوب',
-            'كود الأوردر',
+            'كود الاوردر',
             'العميل',
             'المستلم',
-            'رقم الهاتف',
+            'الهاتف',
             'المنطقة',
-            'قيمة الأوردر',
-            'شحن',
-            'صافي التحصيل',
-            'حالة الأوردر',
+            'مبلغ الطلب',
+            'عمولة المندوب',
+            'الصافي',
+            'حالة الاوردر',
             'الحالة',
-            'ملاحظات الأوردر',
-            'ملاحظات الحالة',
+            'ملاحظة الاوردر',
+            'ملاحظة الحالة',
         ];
     }
 
@@ -103,8 +96,8 @@ class CollectedShippersExport implements FromCollection, WithHeadings, WithMappi
             $row->phone,
             $row->area,
             $row->order_amount,
-            $row->shipping_fee,
-            $row->cod,
+            $row->shipper_commission,
+            $row->net,
             $row->order_status,
             $row->approval_status,
             $row->order_note,
@@ -123,5 +116,16 @@ class CollectedShippersExport implements FromCollection, WithHeadings, WithMappi
                 ],
             ],
         ];
+    }
+
+    private function baseQuery()
+    {
+        if ($this->ids && count($this->ids) > 0) {
+            return ShipperCollection::query()
+                ->whereIn('id', $this->ids)
+                ->latest();
+        }
+
+        return $this->query ?: ShipperCollection::query()->latest();
     }
 }

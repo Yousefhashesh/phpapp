@@ -286,11 +286,14 @@ import ShipperCollectionModal from "./ShipperCollectionModal.vue";
 
 const onCollectionCreated = (collection?: any) => {
   if (collection && collectionsData.value?.data) {
-    collectionsData.value.data.unshift(collection)
+    collectionsData.value.data = [
+      collection,
+      ...collectionsData.value.data.filter((item: any) => item.id !== collection.id),
+    ]
     flash(`collection-${collection.id}`)
-  } else {
-    fetchCollections()
   }
+
+  fetchCollections()
 }
 
 const bulkUpdateStatus = async (status: string) => {

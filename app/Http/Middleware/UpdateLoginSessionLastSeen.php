@@ -4,10 +4,13 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Symfony\Component\HttpFoundation\Response;
 
 class UpdateLoginSessionLastSeen
 {
+    private const SEEN_CACHE_SECONDS = 60;
+
     /**
      * @param  Closure(Request): Response  $next
      */
@@ -24,19 +27,43 @@ class UpdateLoginSessionLastSeen
 
         $sessionId = (string) $token->id;
         $userAgent = (string) $request->userAgent();
+        $cacheKey = "login-session:last-seen:{$user->id}:{$sessionId}";
 
-        $updated = $user->loginSessions()
+        $cachedSessionId = Cache::get($cacheKey);
+        if ($cachedSessionId) {
+            $request->attributes->set('login_session_id', $cachedSessionId);
+
+            return $response;
+        }
+
+        $session = $user->loginSessions()
             ->where('session_id', $sessionId)
-            ->update([
+            ->first();
+
+        if ($session) {
+            $request->attributes->set('login_session_id', $session->id);
+
+            $shouldRefresh = $session->last_seen_at === null
+                || $session->last_seen_at->lte(now()->subSeconds(self::SEEN_CACHE_SECONDS))
+                || ! $session->is_current
+                || $session->ip_address !== $request->ip()
+                || $session->user_agent !== $userAgent;
+
+            if (! $shouldRefresh) {
+                Cache::put($cacheKey, $session->id, self::SEEN_CACHE_SECONDS);
+
+                return $response;
+            }
+
+            $session->update([
                 'ip_address' => $request->ip(),
                 'user_agent' => $userAgent,
                 'last_seen_at' => now(),
                 'is_active' => true,
                 'is_current' => true,
             ]);
-
-        if ($updated === 0) {
-            $user->loginSessions()->create([
+        } else {
+            $session = $user->loginSessions()->create([
                 'session_id' => $sessionId,
                 'ip_address' => $request->ip(),
                 'user_agent' => $userAgent,
@@ -52,12 +79,18 @@ class UpdateLoginSessionLastSeen
                 'is_active' => true,
                 'is_current' => true,
             ]);
+
+            $request->attributes->set('login_session_id', $session->id);
         }
 
-        $user->loginSessions()
-            ->where('session_id', '!=', $sessionId)
-            ->where('is_current', true)
-            ->update(['is_current' => false]);
+        if ($session->is_current) {
+            $user->loginSessions()
+                ->where('session_id', '!=', $sessionId)
+                ->where('is_current', true)
+                ->update(['is_current' => false]);
+        }
+
+        Cache::put($cacheKey, $session->id, self::SEEN_CACHE_SECONDS);
 
         return $response;
     }

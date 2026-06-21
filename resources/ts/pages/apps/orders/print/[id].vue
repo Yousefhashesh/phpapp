@@ -136,8 +136,8 @@ definePage({
             <th>رقم الهاتف</th>
             <th>الحالة</th>
             <th>مرتجع</th>
-            <th>المبلغ</th>
-            <th>المصاريف</th>
+            <!-- <th>المبلغ</th> -->
+            <!-- <th>المصاريف</th> -->
             <th>الصافي</th>
           </tr>
         </thead>
@@ -148,8 +148,8 @@ definePage({
             <td>{{ order.phone }}</td>
             <td>{{ order.status.replace(/_/g, ' ') }}</td>
             <td>{{ order.status === 'UNDELIVERED' ? 'نعم' : 'لا' }}</td>
-            <td>{{ Number(order.total_amount).toFixed(2) }}</td>
-            <td>{{ Number(order.shipping_fee || 0).toFixed(2) }}</td>
+            <!-- <td>{{ Number(order.total_amount).toFixed(2) }}</td> -->
+            <!-- <td>{{ Number(order.shipping_fee || 0).toFixed(2) }}</td> -->
             <td>{{ Number((order.pivot?.net_amount || order.total_amount - (order.shipping_fee || 0))).toFixed(2) }}
             </td>
           </tr>
@@ -159,16 +159,16 @@ definePage({
         <VRow>
           <VCol cols="3">
             <div class="text-primary">إجمالي عدد الطلبات:</div>
-            <div class="text-h6 font-weight-bold">{{ data.number_of_orders }}</div>
+            <div class="text-h6 font-weight-bold text-primary">{{ data.number_of_orders }}</div>
           </VCol>
-          <VCol cols="3">
+          <!-- <VCol cols="3">
             <div class="text-primary">إجمالي التحصيل:</div>
             <div class="text-h6 font-weight-bold">{{ Number(data.total_amount).toFixed(2) }} ج.م</div>
-          </VCol>
-          <VCol cols="3">
+          </VCol> -->
+          <!-- <VCol cols="3">
             <div class="text-primary">إجمالي مصاريف الشركة:</div>
             <div class="text-h6 font-weight-bold text-error">{{ Number(data.fees).toFixed(2) }} ج.م</div>
-          </VCol>
+          </VCol> -->
           <VCol cols="3">
             <div class="text-primary">الصافي المستحق للعميل:</div>
             <div class="text-h4 font-weight-black text-success">{{ Number(data.net_amount).toFixed(2) }} ج.م</div>
