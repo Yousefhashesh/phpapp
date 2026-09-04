@@ -710,8 +710,10 @@ onBeforeUnmount(() => {
                 <VCol cols="12" md="6">
                   <AppTextField
                     v-model="settingsData.whatsapp.whatsapp_service_url"
-                    label="رابط خدمة الواتساب على السيرفر"
+                    label="رابط خدمة الواتساب المجانية (whatsapp-service)"
                     placeholder="http://127.0.0.1:3001"
+                    hint="مجاني بالكامل عبر whatsapp-web.js — مش UltraMsg. شغّل مجلد whatsapp-service بـ PM2."
+                    persistent-hint
                   />
                 </VCol>
 

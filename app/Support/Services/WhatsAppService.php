@@ -70,32 +70,22 @@ class WhatsAppService
             return false;
         }
 
+        // Free self-hosted bridge only (whatsapp-service / whatsapp-web.js).
+        // Paid providers like UltraMsg are not used.
         $url = rtrim((string) Setting::getValue('whatsapp_service_url', config('whatsapp.service_url')), '/');
         $apiSecret = (string) Setting::getValue('whatsapp_api_secret', config('whatsapp.api_secret'));
         $success = true;
 
-        $isUltraMsg = str_contains(strtolower($url), 'ultramsg.com');
-
         foreach ($groupIds as $groupId) {
             try {
-                if ($isUltraMsg) {
-                    $response = Http::timeout(15)
-                        ->asForm()
-                        ->post("{$url}/messages/chat", [
-                            'token' => $apiSecret,
-                            'to' => $groupId,
-                            'body' => $message,
-                        ]);
-                } else {
-                    $response = Http::timeout(15)
-                        ->withHeaders([
-                            'X-Api-Secret' => $apiSecret,
-                        ])
-                        ->post("{$url}/send", [
-                            'groupId' => $groupId,
-                            'message' => $message,
-                        ]);
-                }
+                $response = Http::timeout(15)
+                    ->withHeaders([
+                        'X-Api-Secret' => $apiSecret,
+                    ])
+                    ->post("{$url}/send", [
+                        'groupId' => $groupId,
+                        'message' => $message,
+                    ]);
 
                 if (! $response->successful()) {
                     Log::warning('WhatsApp service error for group: '.$groupId, [

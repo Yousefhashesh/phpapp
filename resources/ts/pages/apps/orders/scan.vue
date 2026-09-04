@@ -74,13 +74,13 @@ const onScan = async () => {
 
       // 2. Logic for Client Return Scan
       if (actionType.value === 'client_return') {
-        const isEligibleStatus = ['DELIVERED', 'UNDELIVERED'].includes(order.status)
-        const hasReturnFlag = order.has_return
+        const isUndelivered = order.status === 'UNDELIVERED'
+        const isDeliveredWithReturn = order.status === 'DELIVERED' && order.has_return
         const isShipperReturned = order.is_shipper_returned
         
-        if (!isEligibleStatus || !hasReturnFlag) {
+        if (!isUndelivered && !isDeliveredWithReturn) {
           playErrorSound()
-          alert(`Order #${order.id} is not eligible for Client Return (Must have return flag).`)
+          alert(`Order #${order.id} is not eligible for Client Return (Must be UNDELIVERED or DELIVERED with return flag).`)
           nextTick(() => { inputRef.value?.select() })
           return
         }

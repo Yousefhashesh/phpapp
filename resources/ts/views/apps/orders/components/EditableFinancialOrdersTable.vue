@@ -141,6 +141,8 @@ const saveField = async (order: any, field: string) => {
       .patch({ [field]: payloadValue })
       .json()
 
+console.log("orders :" , data.value?.data)
+
     if (!error.value && data.value?.data) {
       Object.assign(order, data.value.data)
       delete draftValues.value[key]
@@ -184,6 +186,12 @@ const emptyColspan = computed(() => {
           </th>
           <th class="col-client">
             CLIENT
+          </th>
+          <th class="col-shipper">
+            shipper
+          </th>
+          <th class="col-governorate">
+            GOVERNORATE
           </th>
           <th
             v-for="field in editableFields"
@@ -241,6 +249,15 @@ const emptyColspan = computed(() => {
               {{ clientPhone(order) }}
             </div>
           </td>
+
+<td class="col-shipper">
+  <div>{{ order.shipper?.name || '—' }}</div>
+</td>
+          <td class="col-governorate">
+  <div>{{ order.governorate_name || order.governorate || '—' }} </div>
+</td>
+
+
 
           <td
             v-for="field in editableFields"

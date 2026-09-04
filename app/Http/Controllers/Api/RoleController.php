@@ -173,6 +173,7 @@ class RoleController
         }
 
         $resolvedNames = Permission::query()
+          ->where('guard_name','web')
             ->where(function ($query) use ($ids, $names): void {
                 if ($ids !== []) {
                     $query->whereIn('id', $ids);

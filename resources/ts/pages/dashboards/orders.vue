@@ -37,21 +37,33 @@ interface CardMeta {
 
 const vuetifyTheme = useTheme()
 
+
 const cardMeta: Record<string, CardMeta & { permission?: string }> = {
   all_order: { title: 'Total Orders', icon: 'tabler-package', color: 'primary', permission: 'order.dashboard.card.all_order.view' },
   out_for_delivery: { title: 'Out For Delivery', icon: 'tabler-truck-delivery', color: 'info', permission: 'order.dashboard.card.out_for_delivery.view' },
   hold: { title: 'On Hold', icon: 'tabler-pause-circle', color: 'warning', permission: 'order.dashboard.card.hold.view' },
   delivered: { title: 'Delivered', icon: 'tabler-circle-check', color: 'success', permission: 'order.dashboard.card.delivered.view' },
   undelivered: { title: 'Undelivered', icon: 'tabler-alert-circle', color: 'error', permission: 'order.dashboard.card.undelivered.view' },
-  
+
+  out_for_delivery_total: { title: 'Out For Delivery Total', icon: 'tabler-truck-delivery', color: 'info', isMoney: true, permission: 'order.dashboard.card.out_for_delivery_total.view' },
+  hold_total: { title: 'Hold Total', icon: 'tabler-pause-circle', color: 'warning', isMoney: true, permission: 'order.dashboard.card.hold_total.view' },
+  undelivered_total: { title: 'Undelivered Total', icon: 'tabler-alert-circle', color: 'error', isMoney: true, permission: 'order.dashboard.card.undelivered_total.view' },
+
   pending_approval: { title: 'Pending Approval', icon: 'tabler-clipboard-check', color: 'warning' },
   approved: { title: 'Approved', icon: 'tabler-check', color: 'success' },
   rejected: { title: 'Rejected', icon: 'tabler-x', color: 'error' },
 
   collected_shipper: { title: 'Collected (Shipper)', icon: 'tabler-box', color: 'success', permission: 'order.dashboard.card.collected_shipper.view' },
+  uncollected_shipper: { title: 'Uncollected Shipper', icon: 'tabler-box-off', color: 'error', permission: 'order.dashboard.card.uncollected_shipper.view' },
+
   settled_client: { title: 'Settled Client', icon: 'tabler-receipt', color: 'success', permission: 'order.dashboard.card.collected_client.view' },
+  uncollected_client: { title: 'Uncollected Client', icon: 'tabler-receipt', color: 'error', permission: 'order.dashboard.card.uncollected_client.view' },
+
   return_shipper: { title: 'Returned By Shipper', icon: 'tabler-arrow-back', color: 'success', permission: 'order.dashboard.card.return_shipper.view' },
+  unreturn_shipper: { title: 'Unreturn Shipper', icon: 'tabler-arrow-back-up', color: 'warning', permission: 'order.dashboard.card.unreturn_shipper.view' },
+
   return_client: { title: 'Client Returned', icon: 'tabler-rotate', color: 'info', permission: 'order.dashboard.card.return_client.view' },
+  unreturn_client: { title: 'Unreturn Client', icon: 'tabler-rotate-2', color: 'warning', permission: 'order.dashboard.card.unreturn_client.view' },
 
   delivered_total: { title: 'Delivered Amount', icon: 'tabler-cash-banknote', color: 'success', isMoney: true, permission: 'order.dashboard.card.delivered_total.view' },
   cash_ready: { title: 'كاش جاهز (للعميل)', icon: 'tabler-coins', color: 'info', isMoney: true, permission: 'order.dashboard.card.cash_ready.view' },
@@ -62,12 +74,33 @@ const cardMeta: Record<string, CardMeta & { permission?: string }> = {
   total_cod: { title: 'Total COD Amount', icon: 'tabler-cash', color: 'info', isMoney: true },
   total_expenses: { title: 'Total Expenses', icon: 'tabler-credit-card', color: 'error', isMoney: true, permission: 'order.dashboard.card.total_expenses.view' },
   total_revenue: { title: 'Total Revenue', icon: 'tabler-chart-line', color: 'success', isMoney: true, permission: 'order.dashboard.card.total_revenue.view' },
+
+  collected_shipper_total: { title: 'Collected Shipper Total', icon: 'tabler-cash', color: 'success', isMoney: true, permission: 'order.dashboard.card.collected_shipper_total.view' },
+  uncollected_shipper_total: { title: 'Uncollected Shipper Total', icon: 'tabler-cash-off', color: 'error', isMoney: true, permission: 'order.dashboard.card.uncollected_shipper_total.view' },
+  collected_client_total: { title: 'Collected Client Total', icon: 'tabler-cash', color: 'success', isMoney: true, permission: 'order.dashboard.card.collected_client_total.view' },
+  uncollected_client_total: { title: 'Uncollected Client Total', icon: 'tabler-cash-off', color: 'error', isMoney: true, permission: 'order.dashboard.card.uncollected_client_total.view' },
+  return_shipper_total: { title: 'Return Shipper Total', icon: 'tabler-arrow-back-up', color: 'warning', isMoney: true, permission: 'order.dashboard.card.return_shipper_total.view' },
+  unreturn_shipper_total: { title: 'Unreturn Shipper Total', icon: 'tabler-arrow-back', color: 'error', isMoney: true, permission: 'order.dashboard.card.unreturn_shipper_total.view' },
+  return_client_total: { title: 'Return Client Total', icon: 'tabler-rotate', color: 'warning', isMoney: true, permission: 'order.dashboard.card.return_client_total.view' },
+  unreturn_client_total: { title: 'Unreturn Client Total', icon: 'tabler-rotate-2', color: 'error', isMoney: true, permission: 'order.dashboard.card.unreturn_client_total.view' },
 }
+
+// const cardOrder = [
+//   'all_order', 'out_for_delivery', 'hold', 'delivered', 'undelivered',
+//   'pending_approval', 'approved', 'rejected',
+//   'collected_shipper', 'settled_client', 'return_shipper', 'return_client',
+//   'cash_ready', 'net', 'total_shipper_fees', 'total_cop', 'total_expenses', 'total_revenue',
+// ]
+
+
 
 const cardOrder = [
   'all_order', 'out_for_delivery', 'hold', 'delivered', 'undelivered',
   'pending_approval', 'approved', 'rejected',
-  'collected_shipper', 'settled_client', 'return_shipper', 'return_client',
+  'collected_shipper', 'uncollected_shipper',
+  'settled_client', 'uncollected_client',
+  'return_shipper', 'unreturn_shipper',
+  'return_client', 'unreturn_client',
   'cash_ready', 'net', 'total_shipper_fees', 'total_cop', 'total_expenses', 'total_revenue',
 ]
 
@@ -705,6 +738,7 @@ const refreshDashboard = () => execute()
       </VCol>
 
       <VCol
+      v-if="can('order.dashboard.chart.count_breakdown.view' as any, 'all' as any)"
         cols="12"
         md="6"
       >

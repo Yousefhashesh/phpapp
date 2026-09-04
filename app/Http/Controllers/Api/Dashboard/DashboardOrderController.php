@@ -71,7 +71,7 @@ class DashboardOrderController extends Controller
             COUNT(CASE WHEN is_shipper_returned = 0 AND (status = 'UNDELIVERED' OR (status = 'DELIVERED' AND has_return = 1)) THEN 1 END) as unreturn_shipper_orders,
             
             COUNT(CASE WHEN is_client_returned = 1 THEN 1 END) as client_returned_orders,
-            COUNT(CASE WHEN has_return = 1 AND is_shipper_returned = 1 AND is_client_returned = 0 THEN 1 END) as unreturn_client_orders,
+            COUNT(CASE WHEN is_shipper_returned = 1 AND is_client_returned = 0 AND (status = 'UNDELIVERED' OR (status = 'DELIVERED' AND has_return = 1)) THEN 1 END) as unreturn_client_orders,
             
             IFNULL(SUM(total_amount), 0) as total_amount_sum,
             IFNULL(SUM(CASE WHEN status = 'OUT_FOR_DELIVERY' THEN total_amount ELSE 0 END), 0) as out_for_delivery_total_sum,

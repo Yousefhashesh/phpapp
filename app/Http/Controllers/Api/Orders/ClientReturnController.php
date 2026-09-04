@@ -611,7 +611,7 @@ class ClientReturnController extends Controller
         $returnDate = $data['return_date'] ?? now()->toDateString();
         $creatorId = $request->user()->id;
 
-        // Fetch eligible orders: has_return flag + already returned by shipper
+        // Fetch eligible orders: UNDELIVERED OR DELIVERED with has_return, already returned by shipper
         $orders = Order::query()
             ->whereIn('id', $orderIds)
             ->eligibleForClientReturn()
@@ -623,7 +623,6 @@ class ClientReturnController extends Controller
 
         $processedIds = [];
         DB::transaction(function () use ($orders, $returnDate, $creatorId, &$processedIds) {
-            // Group by client
             foreach ($orders->groupBy('client_user_id') as $clientId => $clientOrders) {
                 if (!$clientId) continue;
 
@@ -640,7 +639,7 @@ class ClientReturnController extends Controller
 
                 $this->attachOrdersToReturn($return, $clientOrders);
                 $this->syncReturnOrdersState($return, $clientOrders->pluck('id')->all());
-                
+
                 $processedIds = array_merge($processedIds, $clientOrders->pluck('id')->all());
             }
         });

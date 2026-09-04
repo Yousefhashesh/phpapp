@@ -427,8 +427,8 @@ public function index(Request $request): JsonResponse
         $data = $request->validate([
             'shipper_user_id' => ['sometimes', 'required', 'exists:users,id'],
             'collection_date' => ['sometimes', 'required', 'date'],
-            'total_amount' => ['sometimes', 'nullable', 'numeric', 'min:0'],
-            'shipper_fees' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+            'total_amount' => ['sometimes', 'nullable', 'numeric'],
+            'shipper_fees' => ['sometimes', 'nullable', 'numeric'],
             'net_amount' => ['sometimes', 'nullable', 'numeric'],
             'status' => ['sometimes', 'required', Rule::in(['PENDING', 'COMPLETED', 'CANCELLED'])],
         ]);

@@ -88,7 +88,7 @@ const onOrderUpdated = async (order: any) => {
   document.value.total_amount = financialSummary.value.totalAmount
   if (props.documentType === 'shipper-collection') {
     document.value.shipper_fees = financialSummary.value.shipperFees
-    document.value.net_amount = Math.max(financialSummary.value.totalAmount - financialSummary.value.shipperFees, 0)
+    document.value.net_amount = financialSummary.value.totalAmount - financialSummary.value.shipperFees
   } else {
     document.value.fees = financialSummary.value.totalFees
     document.value.net_amount = financialSummary.value.totalCod

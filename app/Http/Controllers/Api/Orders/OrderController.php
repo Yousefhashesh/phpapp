@@ -93,17 +93,17 @@ class OrderController extends Controller
             'address' => ['required', 'string'],
             'governorate_id' => ['required', 'exists:governorates,id'],
             'city_id' => ['required', 'exists:cities,id'],
-            'total_amount' => ['required', 'numeric', 'min:0'],
+            'total_amount' => ['required', 'numeric',  ],
             'status' => ['required', Rule::in(['OUT_FOR_DELIVERY', 'DELIVERED', 'HOLD', 'UNDELIVERED'])],
             'shipper_user_id' => ['nullable', 'exists:users,id'],
             'client_user_id' => ['required', 'exists:users,id'],
             'shipping_content_id' => ['nullable', 'integer', 'exists:content,id'],
             'allow_open' => ['nullable', 'boolean'],
             'order_note' => ['nullable', 'string'],
-            // 'shipping_fee'=>['nullable', 'numeric', 'min:0']
+            // 'shipping_fee'=>['nullable', 'numeric',  ]
         ]);
 
-        $this->authorizeEditableColumns($request, array_keys($data));
+      //  $this->authorizeEditableColumns($request, array_keys($data));
 
         // $this->authorizeClientShipperMatchesGovernorate($request, $data);
 
@@ -188,7 +188,7 @@ class OrderController extends Controller
         //     'city_id' => ['sometimes', 'required', 'exists:cities,id'],
         //     'shipper_user_id' => ['sometimes', 'nullable', 'exists:users,id'],
         //     'shipping_content_id' => ['sometimes', 'nullable', 'integer', 'exists:content,id'],
-        //     'total_amount' => ['sometimes', 'required', 'numeric', 'min:0'],
+        //     'total_amount' => ['sometimes', 'required', 'numeric',  ],
         //     'status' => ['sometimes', 'required', Rule::in(['OUT_FOR_DELIVERY', 'DELIVERED', 'HOLD', 'UNDELIVERED'])],
         //     'allow_open' => ['sometimes', 'boolean'],
         //     'latest_status_note' => ['nullable', 'string'],
@@ -204,11 +204,11 @@ class OrderController extends Controller
             'city_id' => ['sometimes', 'required', 'exists:cities,id'],
             'shipper_user_id' => ['sometimes', 'nullable', 'exists:users,id'],
             'shipping_content_id' => ['sometimes', 'nullable', 'integer', 'exists:content,id'],
-            'total_amount' => ['sometimes', 'required', 'numeric', 'min:0'],
-            'shipping_fee' => ['sometimes', 'nullable', 'numeric', 'min:0'],
-            'commission_amount' => ['sometimes', 'nullable', 'numeric', 'min:0'],
-            'company_amount' => ['sometimes', 'nullable', 'numeric', 'min:0'],
-            'cod_amount' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+            'total_amount' => ['sometimes', 'required', 'numeric',  ],
+            'shipping_fee' => ['sometimes', 'nullable', 'numeric',  ],
+            'commission_amount' => ['sometimes', 'nullable', 'numeric',  ],
+            'company_amount' => ['sometimes', 'nullable', 'numeric',  ],
+            'cod_amount' => ['sometimes', 'nullable', 'numeric',  ],
             'status' => ['sometimes', 'required', Rule::in(['OUT_FOR_DELIVERY', 'DELIVERED', 'HOLD', 'UNDELIVERED'])],
             'allow_open' => ['sometimes', 'boolean'],
             'latest_status_note' => ['nullable', 'string'],
@@ -304,7 +304,7 @@ class OrderController extends Controller
             'reason' => ['nullable', 'string'],
             'refused_reason_ids' => ['nullable', 'array'],
             'refused_reason_ids.*' => ['integer', 'exists:refused_reasons,id'],
-            'total_amount' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+            'total_amount' => ['sometimes', 'nullable', 'numeric',  ],
             'has_return' => ['nullable', 'boolean'],
         ]);
 
@@ -353,6 +353,9 @@ class OrderController extends Controller
         } elseif ($data['status'] === 'DELIVERED' && $allowsEditAmount) {
             $payload['has_return'] = true;
             $payload['has_return_at'] = now();
+        } elseif ($data['status'] === 'UNDELIVERED') {
+          //  $payload['has_return'] = true;
+            $payload['has_return_at'] = now();
         }
 
         if (! $isClear) {
@@ -389,7 +392,7 @@ class OrderController extends Controller
 
         $data = $request->validate([
             'shipper_user_id' => ['nullable', 'integer', 'exists:users,id'],
-            'commission_amount' => ['nullable', 'numeric', 'min:0'],
+            'commission_amount' => ['nullable', 'numeric',  ],
             'shipper_date' => ['nullable', 'date'],
         ]);
 
@@ -513,7 +516,7 @@ class OrderController extends Controller
             'order_ids' => ['required', 'array', 'min:1'],
             'order_ids.*' => ['required', 'integer', 'exists:orders,id'],
             'shipper_user_id' => ['nullable', 'integer', 'exists:users,id'],
-            'commission_amount' => ['nullable', 'numeric', 'min:0'],
+            'commission_amount' => ['nullable', 'numeric',  ],
             'shipper_date' => ['nullable', 'date'],
         ]);
 
@@ -575,7 +578,7 @@ class OrderController extends Controller
             'refused_reason_id' => ['nullable', 'integer', 'exists:refused_reasons,id'],
             'refused_reason_ids' => ['nullable', 'array'],
             'refused_reason_ids.*' => ['integer', 'exists:refused_reasons,id'],
-            'total_amount' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+            'total_amount' => ['sometimes', 'nullable', 'numeric',  ],
         ]);
 
         $reasonIds = $data['refused_reason_ids'] ?? (isset($data['refused_reason_id']) ? [$data['refused_reason_id']] : []);
@@ -630,6 +633,9 @@ class OrderController extends Controller
                 }
 
                 if ($data['status'] === 'DELIVERED' && $allowsEditAmount) {
+                    $payload['has_return'] = true;
+                    $payload['has_return_at'] = now();
+                } elseif ($data['status'] === 'UNDELIVERED') {
                     $payload['has_return'] = true;
                     $payload['has_return_at'] = now();
                 }

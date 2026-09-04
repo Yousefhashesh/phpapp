@@ -21,22 +21,14 @@ class WhatsAppController extends Controller
             if (! $url || ! $token) {
                 return response()->json([
                     'ready' => false,
-                    'message' => 'WhatsApp API service is not configured yet. Please check WHATSAPP_SERVICE_URL and WHATSAPP_API_SECRET in your settings/environment.',
+                    'message' => 'WhatsApp free bridge is not configured yet. Set WHATSAPP_SERVICE_URL (e.g. http://127.0.0.1:3001) and WHATSAPP_API_SECRET, then run whatsapp-service.',
                     'status' => 'unconfigured',
                 ]);
             }
 
-            $isUltraMsg = str_contains(strtolower($url), 'ultramsg.com');
-
-            if ($isUltraMsg) {
-                $response = Http::timeout(15)->get("{$url}/instance/status", [
-                    'token' => $token,
-                ]);
-            } else {
-                $response = Http::timeout(15)
-                    ->withHeaders(['X-Api-Secret' => $token])
-                    ->get("{$url}/status");
-            }
+            $response = Http::timeout(15)
+                ->withHeaders(['X-Api-Secret' => $token])
+                ->get("{$url}/status");
 
             if (! $response->successful()) {
                 return response()->json([
@@ -48,39 +40,11 @@ class WhatsAppController extends Controller
             }
 
             $data = $response->json();
-            $accountStatus = null;
-            $ready = false;
-            $hasQr = false;
-
-            if ($isUltraMsg) {
-                if (is_array($data)) {
-                    if (isset($data['accountStatus'])) {
-                        $accountStatus = is_array($data['accountStatus']) 
-                            ? ($data['accountStatus']['status'] ?? null) 
-                            : $data['accountStatus'];
-                    } elseif (isset($data['status']['accountStatus'])) {
-                        $accountStatus = is_array($data['status']['accountStatus']) 
-                            ? ($data['status']['accountStatus']['status'] ?? null) 
-                            : $data['status']['accountStatus'];
-                    }
-                }
-
-                if ($accountStatus === null && is_array($data) && isset($data['status']['status'])) {
-                    $accountStatus = $data['status']['status'];
-                }
-
-                $ready = in_array($accountStatus, ['authenticated', 'standby'], true);
-                $hasQr = ! $ready;
-            } else {
-                $ready = !empty($data['ready']);
-                $hasQr = !empty($data['hasQr']);
-                $accountStatus = $data['status'] ?? null;
-            }
 
             return response()->json([
-                'ready' => $ready,
-                'has_qr' => $hasQr,
-                'status' => $accountStatus,
+                'ready' => ! empty($data['ready']),
+                'has_qr' => ! empty($data['hasQr']),
+                'status' => $data['status'] ?? null,
                 'last_error' => $response->json('error') ?? null,
                 'last_disconnect_reason' => null,
                 'api_secret_configured' => filled($token),
@@ -92,7 +56,7 @@ class WhatsAppController extends Controller
         } catch (\Throwable $exception) {
             return response()->json([
                 'ready' => false,
-                'message' => 'WhatsApp service is not running or unreachable.',
+                'message' => 'WhatsApp free bridge is not running or unreachable. Start whatsapp-service (PM2).',
                 'error' => $exception->getMessage(),
             ], 503);
         }
@@ -106,17 +70,9 @@ class WhatsAppController extends Controller
             $token = $this->token();
             $url = $this->serviceUrl();
 
-            $isUltraMsg = str_contains(strtolower($url), 'ultramsg.com');
-
-            if ($isUltraMsg) {
-                $response = Http::timeout(15)->post("{$url}/instance/restart", [
-                    'token' => $token,
-                ]);
-            } else {
-                $response = Http::timeout(15)
-                    ->withHeaders(['X-Api-Secret' => $token])
-                    ->post("{$url}/restart");
-            }
+            $response = Http::timeout(15)
+                ->withHeaders(['X-Api-Secret' => $token])
+                ->post("{$url}/restart");
 
             return response()->json($response->json() ?? [
                 'success' => $response->successful(),
@@ -125,7 +81,7 @@ class WhatsAppController extends Controller
         } catch (\Throwable $exception) {
             return response()->json([
                 'success' => false,
-                'message' => 'WhatsApp service is not running or unreachable.',
+                'message' => 'WhatsApp free bridge is not running or unreachable.',
                 'error' => $exception->getMessage(),
             ], 503);
         }
@@ -139,42 +95,22 @@ class WhatsAppController extends Controller
             $token = $this->token();
             $url = $this->serviceUrl();
 
-            $isUltraMsg = str_contains(strtolower($url), 'ultramsg.com');
+            $response = Http::timeout(15)
+                ->withHeaders(['X-Api-Secret' => $token])
+                ->get("{$url}/qr");
 
-            if ($isUltraMsg) {
-                $response = Http::timeout(15)->get("{$url}/instance/qr", [
-                    'token' => $token,
-                ]);
-
-                if (! $response->successful()) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'WhatsApp service returned an error.',
-                    ], 502);
-                }
-
+            if (! $response->successful()) {
                 return response()->json([
-                    'success' => true,
-                    'qr' => 'data:image/png;base64,' . base64_encode($response->body()),
-                ]);
-            } else {
-                $response = Http::timeout(15)
-                    ->withHeaders(['X-Api-Secret' => $token])
-                    ->get("{$url}/qr");
-
-                if (! $response->successful()) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'WhatsApp service returned an error.',
-                    ], 502);
-                }
-
-                return response()->json($response->json());
+                    'success' => false,
+                    'message' => 'WhatsApp service returned an error.',
+                ], 502);
             }
+
+            return response()->json($response->json());
         } catch (\Throwable $exception) {
             return response()->json([
                 'success' => false,
-                'message' => 'WhatsApp service is not running or unreachable.',
+                'message' => 'WhatsApp free bridge is not running or unreachable.',
                 'error' => $exception->getMessage(),
             ], 503);
         }
@@ -188,22 +124,14 @@ class WhatsAppController extends Controller
             $token = $this->token();
             $url = $this->serviceUrl();
 
-            $isUltraMsg = str_contains(strtolower($url), 'ultramsg.com');
-
-            if ($isUltraMsg) {
-                $response = Http::timeout(20)->get("{$url}/groups", [
-                    'token' => $token,
-                ]);
-            } else {
-                $response = Http::timeout(20)
-                    ->withHeaders(['X-Api-Secret' => $token])
-                    ->get("{$url}/groups");
-            }
+            $response = Http::timeout(20)
+                ->withHeaders(['X-Api-Secret' => $token])
+                ->get("{$url}/groups");
 
             if ($response->status() === 503) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'WhatsApp client is not ready yet.',
+                    'message' => 'WhatsApp client is not ready yet. Scan the QR from Settings.',
                 ], 503);
             }
 
@@ -216,28 +144,15 @@ class WhatsAppController extends Controller
 
             $groups = $response->json();
             $formattedGroups = [];
+            $groupsList = $groups['groups'] ?? [];
 
-            if ($isUltraMsg) {
-                if (is_array($groups)) {
-                    foreach ($groups as $group) {
-                        if (isset($group['id']) && isset($group['name'])) {
-                            $formattedGroups[] = [
-                                'id' => $group['id'],
-                                'name' => $group['name'],
-                            ];
-                        }
-                    }
-                }
-            } else {
-                $groupsList = $groups['groups'] ?? [];
-                if (is_array($groupsList)) {
-                    foreach ($groupsList as $group) {
-                        if (isset($group['id']) && isset($group['name'])) {
-                            $formattedGroups[] = [
-                                'id' => $group['id'],
-                                'name' => $group['name'],
-                            ];
-                        }
+            if (is_array($groupsList)) {
+                foreach ($groupsList as $group) {
+                    if (isset($group['id'], $group['name'])) {
+                        $formattedGroups[] = [
+                            'id' => $group['id'],
+                            'name' => $group['name'],
+                        ];
                     }
                 }
             }
@@ -249,7 +164,7 @@ class WhatsAppController extends Controller
         } catch (\Throwable $exception) {
             return response()->json([
                 'success' => false,
-                'message' => 'WhatsApp service is not running or unreachable.',
+                'message' => 'WhatsApp free bridge is not running or unreachable.',
                 'error' => $exception->getMessage(),
             ], 503);
         }

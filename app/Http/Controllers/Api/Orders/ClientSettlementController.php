@@ -312,9 +312,9 @@ class ClientSettlementController extends Controller
         $data = $request->validate([
             'client_user_id' => ['nullable', 'exists:users,id'],
             'settlement_date' => ['required', 'date'],
-            'total_amount' => ['required', 'numeric', 'min:0'],
-            'number_of_orders' => ['required', 'integer', 'min:0'],
-            'fees' => ['nullable', 'numeric', 'min:0'],
+            'total_amount' => ['required', 'numeric'],
+            'number_of_orders' => ['required', 'integer'],
+            'fees' => ['nullable', 'numeric'],
             'order_ids' => ['nullable', 'array', 'min:1'],
             'order_ids.*' => ['integer', 'distinct', 'exists:orders,id'],
         ]);
@@ -406,8 +406,8 @@ class ClientSettlementController extends Controller
         $data = $request->validate([
             'client_user_id' => ['sometimes', 'required', 'exists:users,id'],
             'settlement_date' => ['sometimes', 'required', 'date'],
-            'total_amount' => ['sometimes', 'nullable', 'numeric', 'min:0'],
-            'fees' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+            'total_amount' => ['sometimes', 'nullable', 'numeric'],
+            'fees' => ['sometimes', 'nullable', 'numeric'],
             'net_amount' => ['sometimes', 'nullable', 'numeric'],
             'status' => ['sometimes', 'required', Rule::in(['PENDING', 'COMPLETED', 'CANCELLED'])],
         ]);
@@ -831,6 +831,7 @@ class ClientSettlementController extends Controller
                 'orders.status',
                 'orders.client_user_id',
                 'orders.shipper_user_id',
+                 'orders.governorate_id',
                 'orders.total_amount',
                 'orders.shipping_fee',
                 'orders.commission_amount',
@@ -842,9 +843,13 @@ class ClientSettlementController extends Controller
             ]),
             'orders.client:id,name',
             'orders.shipper:id,name',
+            'orders.governorate:id,name',
         ]);
     }
 
+
+
+    
     private function settlementDetailsPayload(Request $request, ClientSettlement $clientSettlement): array
     {
         $this->loadSettlementOrderRelations($clientSettlement);
@@ -868,7 +873,12 @@ class ClientSettlementController extends Controller
             $result['number_of_orders'] = $totals['number_of_orders'];
         }
 
-        $result['orders'] = $clientSettlement->orders;
+        $result['orders'] = $clientSettlement->orders->map(function ($order) {
+    return [
+        ...$order->toArray(),
+        'governorate_name' => $order->governorate?->name,
+    ];
+});
 
         return $result;
     }

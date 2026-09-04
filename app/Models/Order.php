@@ -218,13 +218,17 @@ class Order extends Model
     }
 
     /**
-     * Delivered/undelivered orders flagged for return, already returned by shipper, not yet returned to client.
+     * UNDELIVERED OR DELIVERED with has_return, already returned by shipper, not yet returned to client.
      */
     public function scopeEligibleForClientReturn(Builder $query): Builder
     {
         return $query
-            ->whereIn('status', ['DELIVERED', 'UNDELIVERED'])
-            ->where('has_return', true)
+            ->where(function (Builder $q): void {
+                $q->where('status', 'UNDELIVERED')
+                    ->orWhere(function (Builder $sub): void {
+                        $sub->where('status', 'DELIVERED')->where('has_return', true);
+                    });
+            })
             ->where('is_shipper_returned', true)
             ->whereDoesntHave('clientReturns', function ($q): void {
                 $q->where('client_returns.status', '!=', 'CANCELLED');

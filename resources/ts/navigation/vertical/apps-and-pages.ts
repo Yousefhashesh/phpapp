@@ -9,17 +9,35 @@ export default [
       { title: 'Approval Requests', to: 'apps-orders-approval-requests', action: 'manage', subject: 'order.approval.page' },
     ],
   },
-  {
+  // {
+  //   title: 'Tools & Filters',
+  //   icon: { icon: 'solar:filter-bold-duotone' },
+  //   children: [
+  //     { title: 'HOLD & Out For Delivery', to: 'apps-orders-hold-outfordelivery', action: 'manage', subject: 'order.page' },
+  //     { title: 'Uncollected Client', to: 'apps-orders-uncollectedclient', action: 'manage', subject: 'order.page' },
+  //     { title: 'Uncollected Shipper', to: 'apps-orders-uncollectedshipper', action: 'manage', subject: 'order.page' },
+  //     { title: 'Unreturn Shipper', to: 'apps-orders-unreturnshipper', action: 'manage', subject: 'order.page' },
+  //     { title: 'Unreturn Client', to: 'apps-orders-unreturnclient', action: 'manage', subject: 'order.page' },
+  //     { title: 'Rejected Orders', to: 'apps-orders-rejected', action: 'manage', subject: 'order.page' },
+  //     { title: 'Deleted (Trash)', to: 'apps-orders-deleted', action: 'manage', subject: 'order.page' },
+  //   ],
+  // },
+{
     title: 'Tools & Filters',
     icon: { icon: 'solar:filter-bold-duotone' },
     children: [
-      { title: 'HOLD & Out For Delivery', to: 'apps-orders-hold-outfordelivery', action: 'manage', subject: 'order.page' },
-      { title: 'Uncollected Client', to: 'apps-orders-uncollectedclient', action: 'manage', subject: 'order.page' },
-      { title: 'Uncollected Shipper', to: 'apps-orders-uncollectedshipper', action: 'manage', subject: 'order.page' },
-      { title: 'Unreturn Shipper', to: 'apps-orders-unreturnshipper', action: 'manage', subject: 'order.page' },
-      { title: 'Unreturn Client', to: 'apps-orders-unreturnclient', action: 'manage', subject: 'order.page' },
-      { title: 'Rejected Orders', to: 'apps-orders-rejected', action: 'manage', subject: 'order.page' },
-      { title: 'Deleted (Trash)', to: 'apps-orders-deleted', action: 'manage', subject: 'order.page' },
+      { title: 'HOLD & Out For Delivery', to: 'apps-orders-hold-outfordelivery', action: 'manage', subject: 'order.page' }, 
+      
+      { title: 'Uncollected Client', to: 'apps-orders-uncollectedclient', action: 'manage', subject: 'order.uncollectedclient.page' },
+      { title: 'Unreturn Client', to: 'apps-orders-unreturnclient', action: 'manage', subject: 'order.unreturnclient.page' },
+      
+      
+      { title: 'Uncollected Shipper', to: 'apps-orders-uncollectedshipper', action: 'manage', subject: 'order.uncollectedshipper.page' },
+      { title: 'Unreturn Shipper', to: 'apps-orders-unreturnshipper', action: 'manage', subject: 'order.unreturnshipper.page' },
+      
+      
+      { title: 'Rejected Orders', to: 'apps-orders-rejected', action: 'manage', subject: 'order.reject' },
+      { title: 'Deleted (Trash)', to: 'apps-orders-deleted', action: 'manage', subject: 'order.delete' },
     ],
   },
   {

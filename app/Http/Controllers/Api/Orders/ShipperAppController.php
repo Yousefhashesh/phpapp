@@ -85,7 +85,7 @@ class ShipperAppController extends Controller
             'status' => ['required', Rule::in(['DELIVERED', 'HOLD', 'UNDELIVERED'])],
             'reason_id' => ['nullable', 'exists:refused_reasons,id'],
             'note' => ['nullable', 'string', 'max:500'],
-            'total_amount' => ['nullable', 'numeric', 'min:0'],
+            'total_amount' => ['nullable', 'numeric'],
         ]);
 
         $status = $validated['status'];
@@ -143,6 +143,11 @@ class ShipperAppController extends Controller
                 }
             } elseif ($note) {
                 $updateData['latest_status_note'] = $note;
+            }
+
+            if ($status === 'UNDELIVERED') {
+                $updateData['has_return'] = true;
+                $updateData['has_return_at'] = now();
             }
 
             $order->update($updateData);

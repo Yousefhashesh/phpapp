@@ -3,6 +3,7 @@ import { useApi } from '@/composables/useApi';
 import { useFlashHighlight } from '@/composables/useFlashHighlight'
 import { useNotificationStore } from '@/stores/useNotificationStore';
 import { createUrl } from '@core/composable/createUrl';
+import { AnyCaaRecord } from 'node:dns';
 import { useI18n } from 'vue-i18n';
 
 //    Props
@@ -1003,13 +1004,15 @@ searchClients()
             <div><div class="text-h6 font-weight-bold">{{ totals.total_shipping.toFixed(0) }}</div><div class="text-xs text-disabled">Fees</div></div>
         </VCardText></VCard>
       </VCol>
-      <VCol cols="6" md="2">
-        <VCard elevation="2" class="stats-card"><VCardText class="d-flex align-center gap-3 pa-3">
+      <VCol cols="6" md="2" v-if="can('shipper.column.commission_rate.view' as any ,'all' as any) ">
+        <VCard elevation="2" class="stats-card">
+          <VCardText class="d-flex align-center gap-3 pa-3">
             <VAvatar variant="tonal" color="error" icon="tabler-user-share" size="38" />
             <div><div class="text-h6 font-weight-bold">{{ totals.total_commission.toFixed(0) }}</div><div class="text-xs text-disabled">Shipper Fees</div></div>
-        </VCardText></VCard>
+        </VCardText>
+      </VCard>
       </VCol>
-      <VCol cols="6" md="2">
+      <VCol cols="6" md="2" v-if="can('order.dashboard.card.total_cop.view' as any ,'all' as any) " >
         <VCard elevation="2" class="stats-card"><VCardText class="d-flex align-center gap-3 pa-3">
             <VAvatar variant="tonal" color="warning" icon="tabler-wallet" size="38" />
             <div><div class="text-h6 font-weight-bold">{{ totals.total_net.toFixed(0) }}</div><div class="text-xs text-disabled">COP</div></div>
@@ -1311,6 +1314,7 @@ searchClients()
             </template>
             <template v-else>
               <IconBtn
+              v-if="can('activity-log.view' as any, 'all' as any)"
                 size="small"
                 color="primary"
                 @click="openDetails(resolveRowItem(item))"
