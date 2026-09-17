@@ -2,6 +2,10 @@
 
 Bridge between Laravel and WhatsApp Web using `whatsapp-web.js`.
 
+> Deploying to MonsterASP.net (shipyaex.runasp.net)? See
+> [DEPLOY-MONSTERASP.md](DEPLOY-MONSTERASP.md) — IIS/httpPlatform specifics,
+> shipping Chrome, FTP upload steps, and troubleshooting.
+
 ## Setup
 
 ```bash

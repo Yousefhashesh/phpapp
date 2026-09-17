@@ -1,0 +1,14 @@
+# Render.com blueprint for the Shipya WhatsApp bridge.
+# Deploy: dashboard.render.com -> New -> Blueprint -> pick Yousefhashesh/phpapp.
+# WHATSAPP_API_SECRET is prompted during blueprint setup (sync: false).
+services:
+  - type: web
+    name: shipya-whatsapp
+    runtime: docker
+    rootDir: whatsapp-service
+    plan: free
+    envVars:
+      - key: WHATSAPP_HOST
+        value: 0.0.0.0
+      - key: WHATSAPP_API_SECRET
+        sync: false

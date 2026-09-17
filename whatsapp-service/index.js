@@ -1,3 +1,5 @@
+const fs = require('fs')
+const path = require('path')
 const express = require('express')
 const QRCode = require('qrcode')
 const qrcodeTerminal = require('qrcode-terminal')
@@ -16,11 +18,38 @@ let lastError = null
 let lastDisconnectReason = null
 let startedAt = new Date().toISOString()
 
+// On hosts without npm (e.g. MonsterASP), puppeteer's downloaded Chrome lives in
+// the user's cache folder and is missing. Ship it inside ./chrome and pick it up
+// here, so the app runs from any directory.
+const resolveChromeExecutable = () => {
+  if (process.env.PUPPETEER_EXECUTABLE_PATH) {
+    return process.env.PUPPETEER_EXECUTABLE_PATH
+  }
+
+  const candidates = [
+    path.join(__dirname, 'chrome', 'chrome.exe'),
+    path.join(__dirname, 'chrome', 'chrome-win64', 'chrome.exe'),
+    path.join(__dirname, 'chrome', 'chrome-win', 'chrome.exe'),
+    path.join(__dirname, 'chrome', 'chrome-linux', 'chrome'),
+  ]
+
+  return candidates.find(candidate => fs.existsSync(candidate)) || undefined
+}
+
 const client = new Client({
   authStrategy: new LocalAuth({ dataPath: './.wwebjs_auth' }),
   puppeteer: {
     headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    executablePath: resolveChromeExecutable(),
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-gpu',
+      '--disable-dev-shm-usage',
+      '--no-first-run',
+      '--disable-extensions',
+      '--mute-audio',
+    ],
   },
 })
 
