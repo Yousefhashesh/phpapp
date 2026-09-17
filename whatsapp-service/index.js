@@ -108,6 +108,10 @@ const requireSecret = (req, res, next) => {
   return next()
 }
 
+app.get('/healthz', (_req, res) => {
+  res.json({ ok: true })
+})
+
 app.get('/status', requireSecret, (_req, res) => {
   res.json({
     success: true,
