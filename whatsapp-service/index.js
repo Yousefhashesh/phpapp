@@ -84,6 +84,26 @@ client.on('disconnected', reason => {
   lastDisconnectReason = String(reason || 'Disconnected')
   console.error('WhatsApp disconnected:', reason)
   isReady = false
+
+  // Self-heal: whatsapp-web.js does not retry on its own.
+  setTimeout(() => {
+    console.log('Attempting WhatsApp reconnect...')
+    statusText = 'reconnecting'
+    initializeWithRetry()
+  }, 5000)
+})
+
+// whatsapp-web.js 1.x throws unhandled rejections around ready/inject when
+// WhatsApp Web reloads right after linking (e.g. "Execution context was
+// destroyed"). Killing the process here is worse than continuing, so we log
+// and stay up; the disconnected/reconnect handlers above restore the session.
+process.on('unhandledRejection', reason => {
+  console.error('Unhandled rejection (process kept alive):', reason)
+  lastError = String(reason)
+})
+process.on('uncaughtException', error => {
+  console.error('Uncaught exception (process kept alive):', error)
+  lastError = error?.message || String(error)
 })
 
 client.on('loading_screen', (percent, message) => {
@@ -91,11 +111,27 @@ client.on('loading_screen', (percent, message) => {
   console.log(`WhatsApp loading ${percent}%: ${message}`)
 })
 
-client.initialize().catch(error => {
-  statusText = 'initialize_failed'
-  lastError = error?.message || String(error)
-  console.error('WhatsApp initialize failed:', error)
-})
+const initializeWithRetry = (attempt = 1) => {
+  client.initialize().catch(error => {
+    statusText = 'initialize_failed'
+    lastError = error?.message || String(error)
+    console.error(`WhatsApp initialize failed (attempt ${attempt}):`, error?.message || error)
+
+    // WhatsApp Web sometimes navigates mid-boot and destroys the injection
+    // context ("Execution context was destroyed"). It is transient — tear
+    // down our own browser first (a leftover instance locks the profile),
+    // then retry.
+    if (attempt < 5) {
+      setTimeout(() => {
+        console.log(`Retrying WhatsApp initialize (attempt ${attempt + 1})...`)
+        statusText = `initializing (retry ${attempt + 1})`
+        client.destroy().catch(() => undefined).finally(() => initializeWithRetry(attempt + 1))
+      }, 8000)
+    }
+  })
+}
+
+initializeWithRetry()
 
 const app = express()
 app.use(express.json({ limit: '1mb' }))
@@ -133,7 +169,7 @@ app.post('/restart', requireSecret, async (_req, res) => {
     isReady = false
     latestQr = null
     await client.destroy().catch(() => undefined)
-    await client.initialize()
+    initializeWithRetry()
     return res.json({ success: true, message: 'WhatsApp client restart requested.' })
   } catch (error) {
     lastError = error?.message || String(error)
